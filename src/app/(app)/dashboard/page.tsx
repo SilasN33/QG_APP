@@ -3,7 +3,6 @@
 import { Avatar } from "@/components/ui/Avatar";
 import { Badge } from "@/components/ui/Badge";
 import { Card } from "@/components/ui/Card";
-import { Button } from "@/components/ui/Button";
 import {
   CURRENT_PLAYER,
   MOCK_MATCHES,
@@ -18,7 +17,6 @@ import {
   XCircle,
   Minus,
   ChevronRight,
-  Trophy,
   Crown,
 } from "lucide-react";
 import Link from "next/link";

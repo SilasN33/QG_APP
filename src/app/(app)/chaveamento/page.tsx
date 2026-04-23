@@ -77,14 +77,6 @@ function BracketMatch({
   );
 }
 
-function ConnectorLine({ className }: { className?: string }) {
-  return (
-    <div className={cn("flex items-center", className)}>
-      <div className="w-4 h-px bg-gray-200" />
-    </div>
-  );
-}
-
 export default function ChaveamentoPage() {
   const [activeTab, setActiveTab] = useState<BracketType>("principal");
 

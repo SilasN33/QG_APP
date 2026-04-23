@@ -5,7 +5,6 @@ import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { CURRENT_PLAYER, MOCK_STANDINGS, MOCK_MATCHES } from "@/lib/mock-data";
 import { LogOut, Trophy, Target, Layers, TrendingUp } from "lucide-react";
-import { cn } from "@/utils/cn";
 
 export default function PerfilPage() {
   const player = CURRENT_PLAYER;

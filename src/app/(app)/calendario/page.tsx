@@ -41,18 +41,7 @@ function phaseToFilter(phase: string): FilterType {
   return "todos";
 }
 
-function getMatchResult(
-  match: Match,
-  playerId = "p1"
-): "victory" | "defeat" | "wo" | "pending" {
-  if (match.status === "scheduled") return "pending";
-  if (match.status === "wo") return "wo";
-  if (!match.winner_id) return "pending";
-  return match.winner_id === playerId ? "victory" : "defeat";
-}
-
 function MatchRow({ match }: { match: Match }) {
-  const result = getMatchResult(match);
   const hasResult = match.status === "completed" || match.status === "wo";
   const phaseLabel: Record<string, string> = {
     group: "Grupo",
