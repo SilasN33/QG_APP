@@ -20,32 +20,35 @@ export async function middleware(request: NextRequest) {
           );
           supabaseResponse = NextResponse.next({ request });
           cookiesToSet.forEach(({ name, value, options }) =>
-            supabaseResponse.cookies.set(name, value, options as Parameters<typeof supabaseResponse.cookies.set>[2])
+            supabaseResponse.cookies.set(
+              name,
+              value,
+              options as Parameters<typeof supabaseResponse.cookies.set>[2]
+            )
           );
         },
       },
     }
   );
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
+  const { data: { user } } = await supabase.auth.getUser();
   const { pathname } = request.nextUrl;
 
-  // Public routes
-  if (pathname.startsWith("/login")) {
-    if (user) {
-      return NextResponse.redirect(new URL("/dashboard", request.url));
-    }
-    return supabaseResponse;
+  const isAuthRoute =
+    pathname.startsWith("/login") ||
+    pathname.startsWith("/signup") ||
+    pathname.startsWith("/onboarding");
+
+  // Not logged in → redirect to login (except public/auth routes)
+  if (!user && !isAuthRoute) {
+    return NextResponse.redirect(new URL("/login", request.url));
   }
 
-  // Protected routes — redirect to login if not authenticated
-  // NOTE: for MVP demo, we skip auth check to allow browsing without Supabase
-  // if (!user) {
-  //   return NextResponse.redirect(new URL("/login", request.url));
-  // }
+  // Logged in → don't show login/signup (but allow onboarding)
+  if (user && (pathname.startsWith("/login") || pathname.startsWith("/signup"))) {
+    return NextResponse.redirect(new URL("/dashboard", request.url));
+  }
+  // We let the layout handle this check to avoid extra DB call in middleware
 
   return supabaseResponse;
 }
