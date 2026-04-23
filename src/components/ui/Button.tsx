@@ -2,22 +2,23 @@ import { cn } from "@/utils/cn";
 import { ButtonHTMLAttributes } from "react";
 
 type ButtonVariant = "primary" | "secondary" | "ghost" | "outline";
-type ButtonSize = "sm" | "md" | "lg";
+type ButtonSize    = "sm" | "md" | "lg";
 
 interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
-  variant?: ButtonVariant;
-  size?: ButtonSize;
+  variant?:  ButtonVariant;
+  size?:     ButtonSize;
   fullWidth?: boolean;
 }
 
 const variants: Record<ButtonVariant, string> = {
   primary:
-    "bg-clay-500 hover:bg-clay-600 text-white shadow-sm active:scale-95",
+    "bg-lime-500 hover:bg-lime-400 text-surface-0 font-bold shadow-sm active:scale-95",
   secondary:
-    "bg-green-900 hover:bg-green-800 text-green-100 shadow-sm active:scale-95",
-  ghost: "bg-transparent hover:bg-green-800/40 text-green-100",
+    "bg-surface-3 hover:bg-surface-4 text-white/80 border border-white/[0.08] active:scale-95",
+  ghost:
+    "bg-transparent hover:bg-white/[0.06] text-white/70",
   outline:
-    "bg-transparent border border-green-700 text-green-100 hover:bg-green-800/30",
+    "bg-transparent border border-white/[0.14] text-white/70 hover:border-white/25 hover:bg-white/[0.04]",
 };
 
 const sizes: Record<ButtonSize, string> = {
@@ -27,8 +28,8 @@ const sizes: Record<ButtonSize, string> = {
 };
 
 export function Button({
-  variant = "primary",
-  size = "md",
+  variant  = "primary",
+  size     = "md",
   fullWidth = false,
   className,
   children,
@@ -41,7 +42,7 @@ export function Button({
         variants[variant],
         sizes[size],
         fullWidth && "w-full",
-        props.disabled && "opacity-50 cursor-not-allowed",
+        props.disabled && "opacity-40 cursor-not-allowed",
         className
       )}
       {...props}

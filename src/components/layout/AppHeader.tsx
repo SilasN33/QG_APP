@@ -1,7 +1,5 @@
 "use client";
 
-import { Bell, Menu } from "lucide-react";
-import Image from "next/image";
 import { cn } from "@/utils/cn";
 
 interface AppHeaderProps {
@@ -13,35 +11,25 @@ export function AppHeader({ transparent = false, className }: AppHeaderProps) {
   return (
     <header
       className={cn(
-        "fixed top-0 left-0 right-0 z-40 flex items-center justify-between px-4 h-14",
+        "fixed top-0 left-0 right-0 z-40 h-14 flex items-center",
         transparent
           ? "bg-transparent"
-          : "bg-green-900 border-b border-green-800",
+          : "bg-surface-1/85 backdrop-blur-xl border-b border-white/[0.06]",
         className
       )}
     >
-      <button className="w-9 h-9 flex items-center justify-center rounded-full hover:bg-green-800/60 transition-colors">
-        <Menu size={22} className="text-green-100" />
-      </button>
-
-      <div className="flex items-center gap-2">
-        <Image
-          src="/logo.svg"
-          alt="QG Open"
-          width={32}
-          height={32}
-          className="rounded-full"
-          onError={() => {}}
-        />
-        <span className="text-green-100 font-bold text-sm tracking-wide">
-          QG OPEN 2026
-        </span>
+      <div className="max-w-md mx-auto w-full flex items-center px-4">
+        <div className="flex items-center gap-2.5">
+          <div className="w-7 h-7 rounded-lg bg-lime-500 flex items-center justify-center shrink-0">
+            <span className="font-display font-bold text-[11px] text-surface-0 tracking-tight leading-none">
+              QG
+            </span>
+          </div>
+          <span className="font-display font-bold text-white/90 text-sm tracking-wide">
+            QG OPEN <span className="text-lime-500">2026</span>
+          </span>
+        </div>
       </div>
-
-      <button className="w-9 h-9 flex items-center justify-center rounded-full hover:bg-green-800/60 transition-colors relative">
-        <Bell size={20} className="text-green-100" />
-        <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-clay-500 rounded-full" />
-      </button>
     </header>
   );
 }

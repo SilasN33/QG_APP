@@ -16,16 +16,13 @@ export default async function AppLayout({
   if (!user) redirect("/login");
 
   const player = await getPlayerByUserId(user.id);
-
-  // Player record not found — user is authenticated but has no profile.
-  // Send to /setup instead of /login to avoid a redirect loop with the middleware.
   if (!player) redirect("/setup");
 
   return (
     <PlayerProvider player={player}>
-      <div className="min-h-screen bg-[#F4F6F5]">
+      <div className="min-h-screen bg-surface-1">
         <AppHeader />
-        <main className="pt-14 pb-20 max-w-md mx-auto">{children}</main>
+        <main className="pt-14 pb-28 max-w-md mx-auto">{children}</main>
         <BottomNav />
       </div>
     </PlayerProvider>

@@ -15,45 +15,41 @@ import { cn } from "@/utils/cn";
 import type { Player, Standing, GroupLetter } from "@/types";
 
 interface Props {
-  player: Player;
-  standing: Standing | null;
+  player:     Player;
+  standing:   Standing | null;
   matchCount: number;
 }
 
 const GROUPS: { value: GroupLetter | null; label: string }[] = [
-  { value: null,  label: "Sem grupo" },
-  { value: "A",   label: "Grupo A" },
-  { value: "B",   label: "Grupo B" },
-  { value: "C",   label: "Grupo C" },
-  { value: "D",   label: "Grupo D" },
+  { value: null, label: "Sem grupo" },
+  { value: "A",  label: "Grupo A" },
+  { value: "B",  label: "Grupo B" },
+  { value: "C",  label: "Grupo C" },
+  { value: "D",  label: "Grupo D" },
 ];
 
 export function PerfilClient({ player, standing, matchCount }: Props) {
   const router = useRouter();
 
-  // Name edit state
   const [editingName, setEditingName] = useState(false);
-  const [nameValue, setNameValue]     = useState(player.name);
-  const [nameSaving, setNameSaving]   = useState(false);
-  const [nameError, setNameError]     = useState<string | null>(null);
+  const [nameValue,   setNameValue]   = useState(player.name);
+  const [nameSaving,  setNameSaving]  = useState(false);
+  const [nameError,   setNameError]   = useState<string | null>(null);
 
-  // Group edit state
   const [showGroupPicker, setShowGroupPicker] = useState(false);
-  const [groupValue, setGroupValue]           = useState<GroupLetter | null>(player.group_letter);
-  const [groupSaving, setGroupSaving]         = useState(false);
-  const [groupError, setGroupError]           = useState<string | null>(null);
-  const [groupSuccess, setGroupSuccess]       = useState(false);
+  const [groupValue,      setGroupValue]      = useState<GroupLetter | null>(player.group_letter);
+  const [groupSaving,     setGroupSaving]     = useState(false);
+  const [groupError,      setGroupError]      = useState<string | null>(null);
+  const [groupSuccess,    setGroupSuccess]    = useState(false);
 
-  // Avatar upload state
-  const fileInputRef                        = useRef<HTMLInputElement>(null);
-  const [avatarSrc, setAvatarSrc]           = useState(player.avatar_url);
-  const [avatarUploading, setAvatarUploading] = useState(false);
-  const [avatarError, setAvatarError]       = useState<string | null>(null);
+  const fileInputRef                            = useRef<HTMLInputElement>(null);
+  const [avatarSrc,       setAvatarSrc]         = useState(player.avatar_url);
+  const [avatarUploading, setAvatarUploading]   = useState(false);
+  const [avatarError,     setAvatarError]       = useState<string | null>(null);
 
-  const winRate =
-    matchCount > 0 && standing
-      ? Math.round((standing.wins / matchCount) * 100)
-      : 0;
+  const winRate = matchCount > 0 && standing
+    ? Math.round((standing.wins / matchCount) * 100)
+    : 0;
 
   async function handleLogout() {
     await createClient().auth.signOut();
@@ -90,16 +86,10 @@ export function PerfilClient({ player, standing, matchCount }: Props) {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    const ext = file.name.split(".").pop()?.toLowerCase() ?? "jpg";
+    const ext     = file.name.split(".").pop()?.toLowerCase() ?? "jpg";
     const allowed = ["jpg", "jpeg", "png", "webp"];
-    if (!allowed.includes(ext)) {
-      setAvatarError("Use uma imagem JPG, PNG ou WebP.");
-      return;
-    }
-    if (file.size > 5 * 1024 * 1024) {
-      setAvatarError("A imagem deve ter no máximo 5 MB.");
-      return;
-    }
+    if (!allowed.includes(ext)) { setAvatarError("Use JPG, PNG ou WebP."); return; }
+    if (file.size > 5 * 1024 * 1024) { setAvatarError("Máximo 5 MB."); return; }
 
     setAvatarUploading(true);
     setAvatarError(null);
@@ -114,7 +104,7 @@ export function PerfilClient({ player, standing, matchCount }: Props) {
       .upload(path, file, { upsert: true, contentType: file.type });
 
     if (uploadError) {
-      setAvatarError("Erro ao enviar imagem. Tente novamente.");
+      setAvatarError(uploadError.message || "Erro ao enviar imagem.");
       setAvatarUploading(false);
       return;
     }
@@ -123,41 +113,42 @@ export function PerfilClient({ player, standing, matchCount }: Props) {
     const urlWithBust = `${publicUrl}?t=${Date.now()}`;
 
     const { error: dbError } = await updateAvatarUrlAction(urlWithBust);
-    if (dbError) {
-      setAvatarError(dbError);
-      setAvatarUploading(false);
-      return;
-    }
+    if (dbError) { setAvatarError(dbError); setAvatarUploading(false); return; }
 
     setAvatarSrc(urlWithBust);
     setAvatarUploading(false);
     router.refresh();
   }
 
-  const stats = [
-    { icon: <Trophy size={18} className="text-amber-400" />,   label: "Vitórias",        value: standing?.wins ?? 0 },
-    { icon: <Target size={18} className="text-clay-400" />,    label: "Aproveitamento",  value: `${winRate}%` },
-    { icon: <Layers size={18} className="text-blue-400" />,    label: "Sets ganhos",     value: standing ? `${standing.sets_won}-${standing.sets_lost}` : "0-0" },
-    { icon: <TrendingUp size={18} className="text-green-500" />, label: "Pontos",         value: standing?.points ?? 0 },
-  ];
-
   const currentGroupLabel = GROUPS.find((g) => g.value === groupValue)?.label ?? "Sem grupo";
+
+  const stats = [
+    { icon: <Trophy    size={16} className="text-amber-400" />, label: "Vitórias",       value: standing?.wins ?? 0 },
+    { icon: <Target    size={16} className="text-lime-500"  />, label: "Aproveitamento", value: `${winRate}%` },
+    { icon: <Layers    size={16} className="text-blue-400"  />, label: "Sets ganhos",    value: standing ? `${standing.sets_won}–${standing.sets_lost}` : "0–0" },
+    { icon: <TrendingUp size={16} className="text-purple-400" />, label: "Pontos",       value: standing?.points ?? 0 },
+  ];
 
   return (
     <div className="animate-slide-up">
-      {/* Header */}
-      <div className="bg-green-900 px-4 pt-6 pb-10 flex flex-col items-center gap-3">
+      {/* Hero */}
+      <div className="bg-green-900 px-5 pt-6 pb-10 flex flex-col items-center gap-3">
         <div className="relative">
-          <Avatar name={nameValue} src={avatarSrc} size="xl" />
+          <Avatar
+            name={nameValue}
+            src={avatarSrc}
+            size="xl"
+            className="ring-2 ring-lime-500/30 ring-offset-2 ring-offset-green-900"
+          />
           <button
             onClick={() => fileInputRef.current?.click()}
             disabled={avatarUploading}
-            className="absolute -bottom-1 -right-1 w-7 h-7 rounded-full bg-clay-500 border-2 border-green-900 flex items-center justify-center shadow-md hover:bg-clay-400 transition-colors disabled:opacity-60"
-            title="Alterar foto de perfil"
+            className="absolute -bottom-1 -right-1 w-7 h-7 rounded-full bg-lime-500 border-2 border-green-900 flex items-center justify-center shadow-glow hover:bg-lime-400 transition-colors disabled:opacity-50"
+            title="Alterar foto"
           >
             {avatarUploading
-              ? <Loader2 size={13} className="text-white animate-spin" />
-              : <Camera size={13} className="text-white" />
+              ? <Loader2 size={13} className="text-surface-0 animate-spin" />
+              : <Camera  size={13} className="text-surface-0" />
             }
           </button>
           <input
@@ -168,9 +159,11 @@ export function PerfilClient({ player, standing, matchCount }: Props) {
             onChange={handleAvatarChange}
           />
         </div>
+
         {avatarError && (
-          <p className="text-clay-300 text-xs text-center max-w-[200px]">{avatarError}</p>
+          <p className="text-red-400 text-xs text-center max-w-[200px]">{avatarError}</p>
         )}
+
         <div className="text-center">
           {editingName ? (
             <div className="flex items-center gap-2 justify-center">
@@ -179,18 +172,18 @@ export function PerfilClient({ player, standing, matchCount }: Props) {
                 onChange={(e) => setNameValue(e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && saveName()}
                 autoFocus
-                className="bg-green-800/80 border border-green-600 text-white text-xl font-black rounded-xl px-3 py-1.5 focus:outline-none focus:border-clay-400 text-center w-52"
+                className="bg-surface-0/50 border border-white/20 text-white text-xl font-display font-bold rounded-xl px-3 py-1.5 focus:outline-none focus:border-lime-500/50 text-center w-52"
               />
               <button
                 onClick={saveName}
                 disabled={nameSaving}
-                className="w-8 h-8 rounded-full bg-green-700 flex items-center justify-center text-green-100 hover:bg-green-600 transition-colors"
+                className="w-8 h-8 rounded-full bg-lime-500 flex items-center justify-center text-surface-0 hover:bg-lime-400 transition-colors"
               >
                 <Check size={14} />
               </button>
               <button
                 onClick={() => { setEditingName(false); setNameValue(player.name); }}
-                className="w-8 h-8 rounded-full bg-green-800 flex items-center justify-center text-green-400 hover:bg-green-700 transition-colors"
+                className="w-8 h-8 rounded-full bg-surface-0/40 flex items-center justify-center text-white/40 hover:bg-surface-0/60 transition-colors"
               >
                 <X size={14} />
               </button>
@@ -198,30 +191,30 @@ export function PerfilClient({ player, standing, matchCount }: Props) {
           ) : (
             <button
               onClick={() => setEditingName(true)}
-              className="group flex items-center gap-2 text-white font-black text-2xl hover:text-green-200 transition-colors"
+              className="group flex items-center gap-2 text-white font-display font-bold text-2xl hover:text-white/80 transition-colors"
             >
               {nameValue}
-              <Pencil size={14} className="text-green-500 group-hover:text-green-300 transition-colors" />
+              <Pencil size={13} className="text-white/30 group-hover:text-lime-500 transition-colors" />
             </button>
           )}
-          {nameError && <p className="text-clay-300 text-xs mt-1">{nameError}</p>}
-          <p className="text-clay-400 text-sm font-bold mt-0.5">
+          {nameError && <p className="text-red-400 text-xs mt-1">{nameError}</p>}
+          <p className="text-white/35 text-sm font-semibold mt-1">
             {groupValue ? `Grupo ${groupValue}` : "Sem grupo"}
             {standing ? ` · ${standing.position}º no ranking` : ""}
           </p>
         </div>
       </div>
 
-      <div className="px-4 -mt-6 pb-8 space-y-3">
+      <div className="px-4 -mt-5 pb-8 space-y-3">
         {/* Stats */}
-        <Card className="border border-gray-100">
-          <div className="grid grid-cols-2 gap-3">
+        <Card>
+          <div className="grid grid-cols-2 gap-2.5">
             {stats.map(({ icon, label, value }) => (
-              <div key={label} className="bg-gray-50 rounded-xl p-3 flex items-center gap-3">
+              <div key={label} className="bg-surface-3 rounded-xl p-3.5 flex items-center gap-3 border border-white/[0.04]">
                 {icon}
                 <div>
-                  <p className="text-lg font-black text-gray-800">{value}</p>
-                  <p className="text-[10px] text-gray-400 font-semibold">{label}</p>
+                  <p className="text-lg font-display font-bold text-white/85">{value}</p>
+                  <p className="text-[10px] text-white/30 font-semibold uppercase tracking-wide">{label}</p>
                 </div>
               </div>
             ))}
@@ -229,26 +222,28 @@ export function PerfilClient({ player, standing, matchCount }: Props) {
         </Card>
 
         {/* Group selector */}
-        <Card className="border border-gray-100">
-          <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400 mb-3">
+        <Card>
+          <p className="text-[10px] font-display font-bold uppercase tracking-widest text-white/30 mb-3">
             Meu Grupo
           </p>
           <div className="relative">
             <button
               onClick={() => setShowGroupPicker((v) => !v)}
               className={cn(
-                "w-full flex items-center justify-between px-4 py-3 rounded-xl border-2 transition-all text-sm font-semibold",
+                "w-full flex items-center justify-between px-4 py-3 rounded-xl border transition-all text-sm font-semibold",
                 groupSaving
-                  ? "border-gray-100 bg-gray-50 text-gray-400 cursor-wait"
-                  : "border-gray-100 bg-gray-50 text-gray-800 hover:border-green-700/40"
+                  ? "border-white/[0.06] bg-surface-3 text-white/30 cursor-wait"
+                  : "border-white/[0.06] bg-surface-3 text-white/80 hover:border-white/15"
               )}
               disabled={groupSaving}
             >
-              <span className="flex items-center gap-2">
+              <span className="flex items-center gap-2.5">
                 <span
                   className={cn(
-                    "w-6 h-6 rounded-full flex items-center justify-center text-xs font-black",
-                    groupValue ? "bg-green-900 text-white" : "bg-gray-200 text-gray-400"
+                    "w-6 h-6 rounded-full flex items-center justify-center text-xs font-display font-bold",
+                    groupValue
+                      ? "bg-lime-500 text-surface-0"
+                      : "bg-surface-4 text-white/30"
                   )}
                 >
                   {groupValue ?? "–"}
@@ -256,84 +251,89 @@ export function PerfilClient({ player, standing, matchCount }: Props) {
                 {groupSaving ? "Salvando..." : currentGroupLabel}
               </span>
               {groupSuccess
-                ? <Check size={16} className="text-green-600" />
-                : <ChevronDown size={16} className={cn("text-gray-400 transition-transform", showGroupPicker && "rotate-180")} />
+                ? <Check size={15} className="text-lime-500" />
+                : <ChevronDown size={15} className={cn("text-white/25 transition-transform", showGroupPicker && "rotate-180")} />
               }
             </button>
 
             {showGroupPicker && (
-              <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-100 rounded-xl shadow-lg overflow-hidden z-10">
+              <div className="absolute top-full left-0 right-0 mt-1.5 bg-surface-3 border border-white/[0.08] rounded-xl shadow-card-lg overflow-hidden z-10">
                 {GROUPS.map(({ value, label }) => (
                   <button
                     key={label}
                     onClick={() => saveGroup(value)}
                     className={cn(
-                      "w-full flex items-center gap-3 px-4 py-3 text-sm font-semibold transition-colors hover:bg-gray-50",
-                      groupValue === value ? "text-green-800 bg-green-50" : "text-gray-700"
+                      "w-full flex items-center gap-3 px-4 py-3 text-sm font-semibold transition-colors hover:bg-white/[0.05]",
+                      groupValue === value ? "text-lime-400" : "text-white/60"
                     )}
                   >
                     <span
                       className={cn(
-                        "w-6 h-6 rounded-full flex items-center justify-center text-xs font-black",
-                        value ? "bg-green-900 text-white" : "bg-gray-200 text-gray-400"
+                        "w-6 h-6 rounded-full flex items-center justify-center text-xs font-display font-bold",
+                        value ? "bg-lime-500/20 text-lime-400 border border-lime-500/30" : "bg-surface-4 text-white/30"
                       )}
                     >
                       {value ?? "–"}
                     </span>
                     {label}
-                    {groupValue === value && <Check size={14} className="ml-auto text-green-700" />}
+                    {groupValue === value && <Check size={13} className="ml-auto text-lime-500" />}
                   </button>
                 ))}
               </div>
             )}
           </div>
-          {groupError && <p className="text-clay-600 text-xs mt-2">{groupError}</p>}
+          {groupError && <p className="text-red-400 text-xs mt-2">{groupError}</p>}
         </Card>
 
-        {/* Group standings */}
+        {/* Group standing */}
         {standing && (
-          <Card className="border border-gray-100">
-            <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400 mb-3">
-              Desempenho no Grupo {groupValue ?? "—"}
+          <Card>
+            <p className="text-[10px] font-display font-bold uppercase tracking-widest text-white/30 mb-3">
+              Desempenho — Grupo {groupValue ?? "—"}
             </p>
             <div className="grid grid-cols-3 gap-2 text-center">
               {[
                 { label: "Pontos", value: standing.points },
-                { label: "V",      value: standing.wins },
-                { label: "D",      value: standing.losses },
+                { label: "Vitórias", value: standing.wins },
+                { label: "Derrotas", value: standing.losses },
               ].map(({ label, value }) => (
-                <div key={label} className="bg-gray-50 rounded-xl p-3">
-                  <p className="text-2xl font-black text-gray-800">{value}</p>
-                  <p className="text-[10px] text-gray-400 font-semibold">{label}</p>
+                <div key={label} className="bg-surface-3 rounded-xl py-3 border border-white/[0.04]">
+                  <p className="text-2xl font-display font-bold text-white/85">{value}</p>
+                  <p className="text-[9px] text-white/25 font-semibold uppercase tracking-wide mt-0.5">{label}</p>
                 </div>
               ))}
             </div>
-            <div className="mt-3 grid grid-cols-2 gap-2 text-center">
-              <div className="bg-gray-50 rounded-xl p-2">
-                <p className="text-sm font-bold text-gray-700">{standing.sets_won}-{standing.sets_lost}</p>
-                <p className="text-[10px] text-gray-400">Saldo de Sets</p>
+            <div className="mt-2.5 grid grid-cols-2 gap-2 text-center">
+              <div className="bg-surface-3 rounded-xl p-2.5 border border-white/[0.04]">
+                <p className="text-sm font-display font-bold text-white/70">{standing.sets_won}–{standing.sets_lost}</p>
+                <p className="text-[10px] text-white/25 mt-0.5">Saldo de Sets</p>
               </div>
-              <div className="bg-gray-50 rounded-xl p-2">
-                <p className="text-sm font-bold text-gray-700">{standing.games_won}-{standing.games_lost}</p>
-                <p className="text-[10px] text-gray-400">Saldo de Games</p>
+              <div className="bg-surface-3 rounded-xl p-2.5 border border-white/[0.04]">
+                <p className="text-sm font-display font-bold text-white/70">{standing.games_won}–{standing.games_lost}</p>
+                <p className="text-[10px] text-white/25 mt-0.5">Saldo de Games</p>
               </div>
             </div>
           </Card>
         )}
 
         {/* Info */}
-        <Card className="border border-gray-100">
-          <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400 mb-3">Informações</p>
-          <div className="space-y-2">
+        <Card>
+          <p className="text-[10px] font-display font-bold uppercase tracking-widest text-white/30 mb-3">
+            Informações
+          </p>
+          <div className="space-y-0.5">
             {[
-              { label: "Nome",      value: nameValue },
-              { label: "Grupo",     value: currentGroupLabel },
-              { label: "Partidas",  value: String(matchCount) },
-              { label: "Status",    value: "Ativo" },
+              { label: "Nome",     value: nameValue },
+              { label: "Grupo",    value: currentGroupLabel },
+              { label: "Partidas", value: String(matchCount) },
+              { label: "Status",   value: "Ativo" },
             ].map(({ label, value }) => (
-              <div key={label} className="flex items-center justify-between py-2 border-b border-gray-50 last:border-0">
-                <span className="text-xs text-gray-400">{label}</span>
-                <span className="text-xs font-semibold text-gray-700">{value}</span>
+              <div
+                key={label}
+                className="flex items-center justify-between py-2.5 border-b border-white/[0.04] last:border-0"
+              >
+                <span className="text-xs text-white/30">{label}</span>
+                <span className="text-xs font-semibold text-white/70">{value}</span>
               </div>
             ))}
           </div>
@@ -343,9 +343,9 @@ export function PerfilClient({ player, standing, matchCount }: Props) {
           variant="outline"
           fullWidth
           onClick={handleLogout}
-          className="border-red-200 text-red-500 hover:bg-red-50"
+          className="border-red-500/20 text-red-400/70 hover:border-red-500/35 hover:bg-red-500/5 hover:text-red-400"
         >
-          <LogOut size={16} />
+          <LogOut size={15} />
           Sair da conta
         </Button>
       </div>

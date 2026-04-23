@@ -5,19 +5,18 @@ import { createClient } from "@/lib/supabase/client";
 import { createPlayerAction } from "@/lib/actions/createPlayer";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/Button";
-import { Eye, EyeOff, Lock, Mail, User, CheckCircle } from "lucide-react";
-import Image from "next/image";
+import { Eye, EyeOff, CheckCircle } from "lucide-react";
 import Link from "next/link";
 
 export default function SignupPage() {
-  const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
+  const [name,            setName]            = useState("");
+  const [email,           setEmail]           = useState("");
+  const [password,        setPassword]        = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
-  const [showPassword, setShowPassword] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [emailSent, setEmailSent] = useState(false);
+  const [showPassword,    setShowPassword]    = useState(false);
+  const [loading,         setLoading]         = useState(false);
+  const [error,           setError]           = useState<string | null>(null);
+  const [emailSent,       setEmailSent]       = useState(false);
   const router = useRouter();
 
   async function handleSignup(e: React.FormEvent) {
@@ -30,14 +29,10 @@ export default function SignupPage() {
     setError(null);
 
     const supabase = createClient();
-
     const { data, error: signUpError } = await supabase.auth.signUp({
       email,
       password,
-      options: {
-        // Guarda o nome nos metadados para uso no /setup após confirmação de email
-        data: { display_name: name.trim() },
-      },
+      options: { data: { display_name: name.trim() } },
     });
 
     if (signUpError || !data.user) {
@@ -51,7 +46,6 @@ export default function SignupPage() {
     }
 
     if (data.session) {
-      // Email confirmation desativado — sessão imediata, cria o player agora
       const { error: playerError } = await createPlayerAction(name.trim());
       if (playerError) {
         setError("Conta criada, mas erro ao criar perfil. Tente fazer login.");
@@ -61,7 +55,6 @@ export default function SignupPage() {
       router.push("/dashboard");
       router.refresh();
     } else {
-      // Email confirmation ativado — aguarda confirmação antes de criar perfil
       setEmailSent(true);
       setLoading(false);
     }
@@ -69,17 +62,21 @@ export default function SignupPage() {
 
   if (emailSent) {
     return (
-      <div className="min-h-screen bg-green-900 flex flex-col items-center justify-center px-6">
-        <div className="w-20 h-20 rounded-full bg-green-800 border-2 border-green-700 flex items-center justify-center shadow-lg mb-6">
-          <CheckCircle size={36} className="text-green-300" />
+      <div className="min-h-screen bg-surface-0 flex flex-col items-center justify-center px-6">
+        <div className="w-16 h-16 rounded-2xl bg-lime-500/15 border border-lime-500/30 flex items-center justify-center mb-6">
+          <CheckCircle size={30} className="text-lime-500" />
         </div>
         <div className="text-center max-w-xs">
-          <h1 className="text-2xl font-black text-white mb-2">Verifique seu email</h1>
-          <p className="text-green-400 text-sm">
-            Enviamos um link de confirmação para <strong className="text-green-200">{email}</strong>.
-            Clique no link e depois faça login para entrar no torneio.
+          <h1 className="font-display font-bold text-2xl text-white mb-3">Verifique seu email</h1>
+          <p className="text-white/40 text-sm leading-relaxed">
+            Enviamos um link para{" "}
+            <strong className="text-white/70">{email}</strong>.
+            Clique no link para ativar sua conta.
           </p>
-          <Link href="/login" className="mt-6 inline-block text-clay-400 font-bold text-sm hover:text-clay-300">
+          <Link
+            href="/login"
+            className="mt-8 inline-block text-lime-500 font-semibold text-sm hover:text-lime-400 transition-colors"
+          >
             Ir para o login →
           </Link>
         </div>
@@ -88,88 +85,104 @@ export default function SignupPage() {
   }
 
   return (
-    <div className="min-h-screen bg-green-900 flex flex-col">
-      <div className="flex-1 flex flex-col items-center justify-center px-6 pt-16 pb-8">
-        <div className="w-20 h-20 rounded-full bg-green-800 border-2 border-green-700 flex items-center justify-center shadow-card-lg mb-6">
-          <Image src="/logo.svg" alt="QG Open" width={56} height={56} />
+    <div className="min-h-screen bg-surface-0 flex flex-col relative overflow-hidden">
+      <div
+        className="absolute inset-0 pointer-events-none"
+        style={{
+          backgroundImage: `
+            repeating-linear-gradient(0deg,  transparent, transparent 59px, rgba(201,241,53,0.035) 59px, rgba(201,241,53,0.035) 60px),
+            repeating-linear-gradient(90deg, transparent, transparent 59px, rgba(201,241,53,0.035) 59px, rgba(201,241,53,0.035) 60px)
+          `,
+        }}
+      />
+      <div className="absolute inset-0 pointer-events-none bg-[radial-gradient(ellipse_60%_50%_at_50%_-10%,rgba(9,27,19,0.8),transparent)]" />
+
+      <div className="flex-1 flex flex-col items-center justify-center px-6 py-12 relative z-10">
+        <div className="text-center mb-8 animate-slide-up">
+          <div className="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-lime-500 shadow-glow mb-5">
+            <span className="font-display font-bold text-surface-0 text-base tracking-tight">QG</span>
+          </div>
+          <h1 className="font-display font-bold text-2xl text-white">Criar Conta</h1>
+          <p className="text-white/30 text-sm mt-1">Acesso exclusivo — QG Open 2026</p>
         </div>
 
-        <div className="text-center mb-8">
-          <h1 className="text-2xl font-black text-white">Criar Conta</h1>
-          <p className="text-green-400 text-sm mt-1">Acesso exclusivo para jogadores do QG Open 2026</p>
-        </div>
-
-        <div className="w-full max-w-sm">
-          <form onSubmit={handleSignup} className="space-y-4">
-            <div>
-              <label className="block text-green-300 text-xs font-semibold uppercase tracking-wider mb-1.5">
-                Nome Completo
-              </label>
-              <div className="relative">
-                <User size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-green-500" />
-                <input type="text" value={name} onChange={(e) => setName(e.target.value)}
-                  placeholder="Seu nome completo" required
-                  className="w-full bg-green-800/60 border border-green-700 text-white placeholder-green-600 rounded-xl pl-10 pr-4 py-3 text-sm focus:outline-none focus:border-clay-400 focus:ring-1 focus:ring-clay-400 transition-colors" />
+        <div className="w-full max-w-sm animate-slide-up" style={{ animationDelay: "0.1s" }}>
+          <form onSubmit={handleSignup} className="space-y-3">
+            {[
+              { label: "Nome Completo", type: "text",     value: name,     setter: setName,     placeholder: "Seu nome completo" },
+              { label: "Email",        type: "email",    value: email,    setter: setEmail,    placeholder: "seu@email.com" },
+            ].map(({ label, type, value, setter, placeholder }) => (
+              <div key={label}>
+                <label className="block text-white/35 text-[10px] font-bold uppercase tracking-widest mb-2">
+                  {label}
+                </label>
+                <input
+                  type={type}
+                  value={value}
+                  onChange={(e) => setter(e.target.value)}
+                  placeholder={placeholder}
+                  required
+                  className="w-full bg-surface-2 border border-white/[0.08] text-white placeholder-white/20 rounded-xl px-4 py-3.5 text-sm focus:outline-none focus:border-lime-500/50 focus:ring-1 focus:ring-lime-500/30 transition-all"
+                />
               </div>
-            </div>
+            ))}
 
             <div>
-              <label className="block text-green-300 text-xs font-semibold uppercase tracking-wider mb-1.5">
-                Email
-              </label>
-              <div className="relative">
-                <Mail size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-green-500" />
-                <input type="email" value={email} onChange={(e) => setEmail(e.target.value)}
-                  placeholder="seu@email.com" required
-                  className="w-full bg-green-800/60 border border-green-700 text-white placeholder-green-600 rounded-xl pl-10 pr-4 py-3 text-sm focus:outline-none focus:border-clay-400 focus:ring-1 focus:ring-clay-400 transition-colors" />
-              </div>
-            </div>
-
-            <div>
-              <label className="block text-green-300 text-xs font-semibold uppercase tracking-wider mb-1.5">
+              <label className="block text-white/35 text-[10px] font-bold uppercase tracking-widest mb-2">
                 Senha
               </label>
               <div className="relative">
-                <Lock size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-green-500" />
-                <input type={showPassword ? "text" : "password"} value={password}
-                  onChange={(e) => setPassword(e.target.value)} placeholder="Mínimo 6 caracteres" required
-                  className="w-full bg-green-800/60 border border-green-700 text-white placeholder-green-600 rounded-xl pl-10 pr-11 py-3 text-sm focus:outline-none focus:border-clay-400 focus:ring-1 focus:ring-clay-400 transition-colors" />
-                <button type="button" onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3.5 top-1/2 -translate-y-1/2 text-green-500">
+                <input
+                  type={showPassword ? "text" : "password"}
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="Mínimo 6 caracteres"
+                  required
+                  className="w-full bg-surface-2 border border-white/[0.08] text-white placeholder-white/20 rounded-xl px-4 pr-11 py-3.5 text-sm focus:outline-none focus:border-lime-500/50 focus:ring-1 focus:ring-lime-500/30 transition-all"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3.5 top-1/2 -translate-y-1/2 text-white/30 hover:text-white/60 transition-colors"
+                >
                   {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
                 </button>
               </div>
             </div>
 
             <div>
-              <label className="block text-green-300 text-xs font-semibold uppercase tracking-wider mb-1.5">
+              <label className="block text-white/35 text-[10px] font-bold uppercase tracking-widest mb-2">
                 Confirmar Senha
               </label>
-              <div className="relative">
-                <Lock size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-green-500" />
-                <input type={showPassword ? "text" : "password"} value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)} placeholder="Repita a senha" required
-                  className="w-full bg-green-800/60 border border-green-700 text-white placeholder-green-600 rounded-xl pl-10 pr-4 py-3 text-sm focus:outline-none focus:border-clay-400 focus:ring-1 focus:ring-clay-400 transition-colors" />
-              </div>
+              <input
+                type={showPassword ? "text" : "password"}
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                placeholder="Repita a senha"
+                required
+                className="w-full bg-surface-2 border border-white/[0.08] text-white placeholder-white/20 rounded-xl px-4 py-3.5 text-sm focus:outline-none focus:border-lime-500/50 focus:ring-1 focus:ring-lime-500/30 transition-all"
+              />
             </div>
 
             {error && (
-              <p className="text-clay-300 text-sm text-center bg-clay-600/20 border border-clay-600/40 rounded-lg py-2 px-3">
+              <p className="text-red-400 text-sm text-center bg-red-500/10 border border-red-500/20 rounded-xl py-3 px-4">
                 {error}
               </p>
             )}
 
-            <Button type="submit" fullWidth size="lg" disabled={loading} className="mt-2 font-bold">
-              {loading ? "Criando conta..." : "Criar Conta"}
-            </Button>
+            <div className="pt-2">
+              <Button type="submit" fullWidth size="lg" disabled={loading} className="font-display font-bold tracking-wide">
+                {loading ? "Criando conta..." : "Criar Conta"}
+              </Button>
+            </div>
           </form>
 
-          <div className="mt-6 text-center">
-            <p className="text-green-500 text-sm">
-              Já tem conta?{" "}
-              <Link href="/login" className="text-clay-400 font-bold hover:text-clay-300">Entrar</Link>
-            </p>
-          </div>
+          <p className="text-white/25 text-sm text-center mt-6">
+            Já tem conta?{" "}
+            <Link href="/login" className="text-lime-500/80 font-semibold hover:text-lime-500 transition-colors">
+              Entrar
+            </Link>
+          </p>
         </div>
       </div>
     </div>

@@ -7,23 +7,23 @@ import { cn } from "@/utils/cn";
 import { useCurrentPlayer } from "@/lib/hooks/useCurrentPlayer";
 
 const baseNavItems = [
-  { href: "/dashboard", label: "Início", Icon: Home },
-  { href: "/calendario", label: "Jogos", Icon: Layers },
-  { href: "/ranking", label: "Ranking", Icon: Trophy },
-  { href: "/grupos", label: "Grupos", Icon: Users },
-  { href: "/perfil", label: "Perfil", Icon: User },
+  { href: "/dashboard", label: "Início",  Icon: Home },
+  { href: "/calendario", label: "Jogos",  Icon: Layers },
+  { href: "/ranking",   label: "Ranking", Icon: Trophy },
+  { href: "/grupos",    label: "Grupos",  Icon: Users },
+  { href: "/perfil",    label: "Perfil",  Icon: User },
 ];
 
 const adminNavItem = { href: "/admin", label: "Admin", Icon: Settings };
 
 export function BottomNav() {
   const pathname = usePathname();
-  const player = useCurrentPlayer();
+  const player   = useCurrentPlayer();
   const navItems = player?.is_admin ? [...baseNavItems, adminNavItem] : baseNavItems;
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-50 bg-white border-t border-gray-100 shadow-[0_-2px_12px_rgba(0,0,0,0.08)]">
-      <div className="max-w-md mx-auto flex items-stretch">
+    <div className="fixed bottom-0 left-0 right-0 z-50 flex justify-center pb-5 px-4 pointer-events-none">
+      <nav className="pointer-events-auto flex items-center h-[62px] bg-surface-3/95 backdrop-blur-2xl shadow-nav rounded-[22px] border border-white/[0.09] px-1.5 gap-0.5">
         {navItems.map(({ href, label, Icon }) => {
           const active = pathname === href || pathname.startsWith(href + "/");
           return (
@@ -31,30 +31,32 @@ export function BottomNav() {
               key={href}
               href={href}
               className={cn(
-                "flex-1 flex flex-col items-center justify-center gap-0.5 py-2.5 transition-colors",
-                active ? "text-clay-500" : "text-gray-400 hover:text-gray-600"
+                "flex flex-col items-center justify-center gap-1 px-3.5 py-2 rounded-xl transition-all duration-200",
+                active
+                  ? "bg-white/[0.07]"
+                  : "hover:bg-white/[0.04]"
               )}
             >
               <Icon
-                size={22}
+                size={20}
                 strokeWidth={active ? 2.5 : 1.8}
-                className={cn(active && "text-clay-500")}
+                className={cn(
+                  "transition-colors duration-200",
+                  active ? "text-lime-500" : "text-white/30"
+                )}
               />
               <span
                 className={cn(
-                  "text-[10px] font-semibold tracking-wide",
-                  active ? "text-clay-500" : "text-gray-400"
+                  "text-[9px] font-semibold tracking-wide uppercase transition-colors duration-200",
+                  active ? "text-lime-500" : "text-white/30"
                 )}
               >
                 {label}
               </span>
-              {active && (
-                <span className="absolute bottom-0 w-8 h-0.5 bg-clay-500 rounded-t-full" />
-              )}
             </Link>
           );
         })}
-      </div>
-    </nav>
+      </nav>
+    </div>
   );
 }

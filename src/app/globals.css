@@ -1,13 +1,17 @@
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=Syne:wght@700;800&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
-
 :root {
-  --green-950: #0D2B1E;
-  --green-900: #1C4A35;
-  --clay-500: #C94E1E;
+  --surface-0: #08080A;
+  --surface-1: #0D0D0F;
+  --surface-2: #161618;
+  --surface-3: #1E1E21;
+  --surface-4: #272729;
+  --lime:       #C9F135;
+  --forest:     #091B13;
 }
 
 * {
@@ -19,40 +23,50 @@ html {
 }
 
 body {
-  font-family: 'Inter', system-ui, sans-serif;
-  background-color: #F4F6F5;
+  font-family: 'DM Sans', system-ui, sans-serif;
+  background-color: var(--surface-1);
+  color: #F2F2F0;
   overscroll-behavior: none;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
-/* Safe area for mobile */
+.font-display { font-family: 'Syne', system-ui, sans-serif; }
+
+/* Safe area */
 .safe-bottom {
   padding-bottom: max(1rem, env(safe-area-inset-bottom));
 }
 
 /* Scrollbar hide */
-.scrollbar-hide::-webkit-scrollbar {
-  display: none;
-}
-.scrollbar-hide {
-  -ms-overflow-style: none;
-  scrollbar-width: none;
-}
+.scrollbar-hide::-webkit-scrollbar { display: none; }
+.scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
 
-/* Custom animations */
+/* Animations */
 @keyframes slideUp {
-  from { opacity: 0; transform: translateY(16px); }
+  from { opacity: 0; transform: translateY(18px); }
   to   { opacity: 1; transform: translateY(0); }
 }
-
 .animate-slide-up {
-  animation: slideUp 0.3s ease-out both;
+  animation: slideUp 0.38s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 
 @keyframes fadeIn {
   from { opacity: 0; }
   to   { opacity: 1; }
 }
-
 .animate-fade-in {
-  animation: fadeIn 0.2s ease-out both;
+  animation: fadeIn 0.25s ease-out both;
+}
+
+/* Staggered children */
+.stagger > *:nth-child(1) { animation-delay: 0.04s; }
+.stagger > *:nth-child(2) { animation-delay: 0.09s; }
+.stagger > *:nth-child(3) { animation-delay: 0.14s; }
+.stagger > *:nth-child(4) { animation-delay: 0.19s; }
+.stagger > *:nth-child(5) { animation-delay: 0.24s; }
+
+/* Lime glow on key numbers */
+.lime-glow {
+  text-shadow: 0 0 20px rgba(201, 241, 53, 0.5);
 }
