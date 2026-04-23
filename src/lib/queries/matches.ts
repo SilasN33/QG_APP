@@ -14,8 +14,8 @@ type RawMatch = {
   winner_id: string | null;
   court: string | null;
   created_at: string;
-  player1: { id: string; name: string; avatar_url: string | null; group_letter: string; user_id: string | null; created_at: string } | null;
-  player2: { id: string; name: string; avatar_url: string | null; group_letter: string; user_id: string | null; created_at: string } | null;
+  player1: { id: string; name: string; avatar_url: string | null; group_letter: string | null; user_id: string | null; is_admin: boolean; created_at: string } | null;
+  player2: { id: string; name: string; avatar_url: string | null; group_letter: string | null; user_id: string | null; is_admin: boolean; created_at: string } | null;
   match_sets: { id: string; match_id: string; set_number: number; player1_games: number; player2_games: number }[];
 };
 
@@ -25,13 +25,13 @@ function toMatch(raw: RawMatch): Match {
     group_letter: raw.group_letter as GroupLetter | null,
     phase: raw.phase as Match["phase"],
     status: raw.status as Match["status"],
-    player1: raw.player1 ? { ...raw.player1, group_letter: raw.player1.group_letter as GroupLetter } : undefined,
-    player2: raw.player2 ? { ...raw.player2, group_letter: raw.player2.group_letter as GroupLetter } : undefined,
+    player1: raw.player1 ? { ...raw.player1, group_letter: raw.player1.group_letter as GroupLetter | null } : undefined,
+    player2: raw.player2 ? { ...raw.player2, group_letter: raw.player2.group_letter as GroupLetter | null } : undefined,
     sets: raw.match_sets ?? [],
   };
 }
 
-const PLAYER_SELECT = "id, name, avatar_url, group_letter, user_id, created_at";
+const PLAYER_SELECT = "id, name, avatar_url, group_letter, user_id, is_admin, created_at";
 const MATCH_SELECT = `*, player1:players!matches_player1_id_fkey(${PLAYER_SELECT}), player2:players!matches_player2_id_fkey(${PLAYER_SELECT}), match_sets(*)`;
 
 export async function getAllMatches(): Promise<Match[]> {

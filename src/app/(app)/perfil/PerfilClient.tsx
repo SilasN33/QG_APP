@@ -41,7 +41,7 @@ export function PerfilClient({ player, standing, matchCount }: Props) {
         <div className="text-center">
           <h1 className="text-white font-black text-2xl">{player.name}</h1>
           <p className="text-clay-400 text-sm font-bold mt-0.5">
-            Grupo {player.group_letter}{standing ? ` · ${standing.position}º no ranking` : ""}
+            {player.group_letter ? `Grupo ${player.group_letter}` : "Sem grupo"}{standing ? ` · ${standing.position}º no ranking` : ""}
           </p>
         </div>
       </div>
@@ -64,7 +64,7 @@ export function PerfilClient({ player, standing, matchCount }: Props) {
         {standing && (
           <Card className="border border-gray-100">
             <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400 mb-3">
-              Desempenho no Grupo {player.group_letter}
+              Desempenho no Grupo {player.group_letter ?? "—"}
             </p>
             <div className="grid grid-cols-3 gap-2 text-center">
               {[
@@ -96,7 +96,7 @@ export function PerfilClient({ player, standing, matchCount }: Props) {
           <div className="space-y-2">
             {[
               { label: "Nome", value: player.name },
-              { label: "Grupo", value: `Grupo ${player.group_letter}` },
+              { label: "Grupo", value: player.group_letter ? `Grupo ${player.group_letter}` : "Sem grupo" },
               { label: "Partidas", value: String(matchCount) },
               { label: "Status", value: "Ativo" },
             ].map(({ label, value }) => (

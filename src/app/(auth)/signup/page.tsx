@@ -4,11 +4,12 @@ import { useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/Button";
-import { Eye, EyeOff, Lock, Mail } from "lucide-react";
+import { Eye, EyeOff, Lock, Mail, User } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 
 export default function SignupPage() {
+  const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -19,6 +20,10 @@ export default function SignupPage() {
 
   async function handleSignup(e: React.FormEvent) {
     e.preventDefault();
+    if (!name.trim()) {
+      setError("Digite seu nome completo.");
+      return;
+    }
     if (password !== confirmPassword) {
       setError("As senhas não coincidem.");
       return;
@@ -32,18 +37,31 @@ export default function SignupPage() {
     setError(null);
 
     const supabase = createClient();
-    const { error } = await supabase.auth.signUp({ email, password });
 
-    if (error) {
-      setError(error.message === "User already registered"
-        ? "Este email já está cadastrado."
-        : "Erro ao criar conta. Tente novamente.");
+    const { data, error: signUpError } = await supabase.auth.signUp({ email, password });
+
+    if (signUpError || !data.user) {
+      setError(
+        signUpError?.message === "User already registered"
+          ? "Este email já está cadastrado."
+          : "Erro ao criar conta. Tente novamente."
+      );
       setLoading(false);
       return;
     }
 
-    // After signup, go to onboarding to claim player profile
-    router.push("/onboarding");
+    // Auto-create player profile with the user's name
+    const { error: playerError } = await supabase
+      .from("players")
+      .insert({ name: name.trim(), user_id: data.user.id });
+
+    if (playerError) {
+      setError("Conta criada, mas houve um erro ao criar seu perfil. Contacte o organizador.");
+      setLoading(false);
+      return;
+    }
+
+    router.push("/dashboard");
     router.refresh();
   }
 
@@ -63,6 +81,23 @@ export default function SignupPage() {
 
         <div className="w-full max-w-sm">
           <form onSubmit={handleSignup} className="space-y-4">
+            <div>
+              <label className="block text-green-300 text-xs font-semibold uppercase tracking-wider mb-1.5">
+                Nome Completo
+              </label>
+              <div className="relative">
+                <User size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-green-500" />
+                <input
+                  type="text"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  placeholder="Seu nome completo"
+                  required
+                  className="w-full bg-green-800/60 border border-green-700 text-white placeholder-green-600 rounded-xl pl-10 pr-4 py-3 text-sm focus:outline-none focus:border-clay-400 focus:ring-1 focus:ring-clay-400 transition-colors"
+                />
+              </div>
+            </div>
+
             <div>
               <label className="block text-green-300 text-xs font-semibold uppercase tracking-wider mb-1.5">
                 Email

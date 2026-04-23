@@ -17,8 +17,9 @@ export default async function AppLayout({
 
   const player = await getPlayerByUserId(user.id);
 
-  // First-time user with no player linked → onboarding
-  if (!player) redirect("/onboarding");
+  // Player record not found — this shouldn't happen with the new signup flow,
+  // but if it does, send back to login so they can re-authenticate.
+  if (!player) redirect("/login");
 
   return (
     <PlayerProvider player={player}>

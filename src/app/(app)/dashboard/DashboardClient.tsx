@@ -75,9 +75,11 @@ export function DashboardClient({ player, myMatches, standing }: Props) {
               </span>
             )}
           </div>
-          <span className="bg-green-800 border border-green-700 text-green-200 text-xs font-bold px-3 py-1.5 rounded-xl">
-            Grupo {player.group_letter}
-          </span>
+          {player.group_letter && (
+            <span className="bg-green-800 border border-green-700 text-green-200 text-xs font-bold px-3 py-1.5 rounded-xl">
+              Grupo {player.group_letter}
+            </span>
+          )}
         </div>
       </div>
 
@@ -216,7 +218,7 @@ export function DashboardClient({ player, myMatches, standing }: Props) {
           <Card className="border border-gray-100">
             <div className="flex items-center justify-between mb-3">
               <span className="text-[10px] font-bold uppercase tracking-widest text-gray-400">
-                Grupo {player.group_letter}
+                {player.group_letter ? `Grupo ${player.group_letter}` : "Grupo"}
               </span>
               <Link href="/grupos" className="text-clay-500 text-xs font-semibold flex items-center gap-0.5">
                 Ver grupo <ChevronRight size={12} />

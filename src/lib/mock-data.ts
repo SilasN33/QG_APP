@@ -1,22 +1,22 @@
 import type { Player, Match, Standing } from "@/types";
 
 export const MOCK_PLAYERS: Player[] = [
-  { id: "p1", name: "João Silva", avatar_url: null, group_letter: "A", user_id: "u1", created_at: "" },
-  { id: "p2", name: "Lucas Mendes", avatar_url: null, group_letter: "A", user_id: null, created_at: "" },
-  { id: "p3", name: "Gabriel Rocha", avatar_url: null, group_letter: "A", user_id: null, created_at: "" },
-  { id: "p4", name: "Thiago Oliveira", avatar_url: null, group_letter: "A", user_id: null, created_at: "" },
-  { id: "p5", name: "Pedro Alencar", avatar_url: null, group_letter: "B", user_id: null, created_at: "" },
-  { id: "p6", name: "Rafael Costa", avatar_url: null, group_letter: "B", user_id: null, created_at: "" },
-  { id: "p7", name: "Matheus Lima", avatar_url: null, group_letter: "B", user_id: null, created_at: "" },
-  { id: "p8", name: "Bruno Santos", avatar_url: null, group_letter: "B", user_id: null, created_at: "" },
-  { id: "p9", name: "Carlos Ferreira", avatar_url: null, group_letter: "C", user_id: null, created_at: "" },
-  { id: "p10", name: "Diego Souza", avatar_url: null, group_letter: "C", user_id: null, created_at: "" },
-  { id: "p11", name: "Felipe Martins", avatar_url: null, group_letter: "C", user_id: null, created_at: "" },
-  { id: "p12", name: "Henrique Alves", avatar_url: null, group_letter: "C", user_id: null, created_at: "" },
-  { id: "p13", name: "Igor Pereira", avatar_url: null, group_letter: "D", user_id: null, created_at: "" },
-  { id: "p14", name: "Jorge Nascimento", avatar_url: null, group_letter: "D", user_id: null, created_at: "" },
-  { id: "p15", name: "Leandro Carvalho", avatar_url: null, group_letter: "D", user_id: null, created_at: "" },
-  { id: "p16", name: "Marcos Ribeiro", avatar_url: null, group_letter: "D", user_id: null, created_at: "" },
+  { id: "p1", name: "João Silva", avatar_url: null, group_letter: "A", user_id: "u1", is_admin: false, created_at: "" },
+  { id: "p2", name: "Lucas Mendes", avatar_url: null, group_letter: "A", user_id: null, is_admin: false, created_at: "" },
+  { id: "p3", name: "Gabriel Rocha", avatar_url: null, group_letter: "A", user_id: null, is_admin: false, created_at: "" },
+  { id: "p4", name: "Thiago Oliveira", avatar_url: null, group_letter: "A", user_id: null, is_admin: false, created_at: "" },
+  { id: "p5", name: "Pedro Alencar", avatar_url: null, group_letter: "B", user_id: null, is_admin: false, created_at: "" },
+  { id: "p6", name: "Rafael Costa", avatar_url: null, group_letter: "B", user_id: null, is_admin: false, created_at: "" },
+  { id: "p7", name: "Matheus Lima", avatar_url: null, group_letter: "B", user_id: null, is_admin: false, created_at: "" },
+  { id: "p8", name: "Bruno Santos", avatar_url: null, group_letter: "B", user_id: null, is_admin: false, created_at: "" },
+  { id: "p9", name: "Carlos Ferreira", avatar_url: null, group_letter: "C", user_id: null, is_admin: false, created_at: "" },
+  { id: "p10", name: "Diego Souza", avatar_url: null, group_letter: "C", user_id: null, is_admin: false, created_at: "" },
+  { id: "p11", name: "Felipe Martins", avatar_url: null, group_letter: "C", user_id: null, is_admin: false, created_at: "" },
+  { id: "p12", name: "Henrique Alves", avatar_url: null, group_letter: "C", user_id: null, is_admin: false, created_at: "" },
+  { id: "p13", name: "Igor Pereira", avatar_url: null, group_letter: "D", user_id: null, is_admin: false, created_at: "" },
+  { id: "p14", name: "Jorge Nascimento", avatar_url: null, group_letter: "D", user_id: null, is_admin: false, created_at: "" },
+  { id: "p15", name: "Leandro Carvalho", avatar_url: null, group_letter: "D", user_id: null, is_admin: false, created_at: "" },
+  { id: "p16", name: "Marcos Ribeiro", avatar_url: null, group_letter: "D", user_id: null, is_admin: false, created_at: "" },
 ];
 
 const p = (id: string) => MOCK_PLAYERS.find((pl) => pl.id === id)!;

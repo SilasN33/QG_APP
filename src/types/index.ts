@@ -17,8 +17,9 @@ export interface Player {
   id: string;
   name: string;
   avatar_url: string | null;
-  group_letter: GroupLetter;
+  group_letter: GroupLetter | null;
   user_id: string | null;
+  is_admin: boolean;
   created_at: string;
 }
 

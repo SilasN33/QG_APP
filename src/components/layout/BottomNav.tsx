@@ -2,10 +2,11 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Home, Layers, Trophy, Users, User } from "lucide-react";
+import { Home, Layers, Trophy, Users, User, Settings } from "lucide-react";
 import { cn } from "@/utils/cn";
+import { useCurrentPlayer } from "@/lib/hooks/useCurrentPlayer";
 
-const navItems = [
+const baseNavItems = [
   { href: "/dashboard", label: "Início", Icon: Home },
   { href: "/calendario", label: "Jogos", Icon: Layers },
   { href: "/ranking", label: "Ranking", Icon: Trophy },
@@ -13,8 +14,12 @@ const navItems = [
   { href: "/perfil", label: "Perfil", Icon: User },
 ];
 
+const adminNavItem = { href: "/admin", label: "Admin", Icon: Settings };
+
 export function BottomNav() {
   const pathname = usePathname();
+  const player = useCurrentPlayer();
+  const navItems = player?.is_admin ? [...baseNavItems, adminNavItem] : baseNavItems;
 
   return (
     <nav className="fixed bottom-0 left-0 right-0 z-50 bg-white border-t border-gray-100 shadow-[0_-2px_12px_rgba(0,0,0,0.08)]">
