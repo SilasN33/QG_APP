@@ -11,6 +11,7 @@ BEGIN;
 DROP TABLE IF EXISTS match_sets CASCADE;
 DROP TABLE IF EXISTS matches    CASCADE;
 DROP TABLE IF EXISTS players    CASCADE;
+DROP FUNCTION IF EXISTS is_admin() CASCADE;
 
 -- ============================================================
 -- 2. Players
@@ -61,7 +62,26 @@ CREATE TABLE match_sets (
 );
 
 -- ============================================================
--- 5. Row Level Security
+-- 5. Função auxiliar para verificar admin SEM recursão
+--    SECURITY DEFINER: roda com privilégios do criador,
+--    ignorando o RLS da tabela players — quebra o loop infinito.
+-- ============================================================
+CREATE OR REPLACE FUNCTION is_admin()
+RETURNS boolean
+LANGUAGE sql
+STABLE
+SECURITY DEFINER
+SET search_path = public
+AS $$
+  SELECT EXISTS (
+    SELECT 1 FROM players
+    WHERE user_id = auth.uid()
+      AND is_admin = true
+  );
+$$;
+
+-- ============================================================
+-- 6. Row Level Security
 -- ============================================================
 ALTER TABLE players    ENABLE ROW LEVEL SECURITY;
 ALTER TABLE matches    ENABLE ROW LEVEL SECURITY;
@@ -80,23 +100,17 @@ CREATE POLICY "Users can insert own player" ON players
 CREATE POLICY "Users can update own player" ON players
   FOR UPDATE USING (auth.uid() = user_id);
 
--- Admin: acesso total em players
+-- Admin: acesso total em players (usa função SECURITY DEFINER — sem recursão)
 CREATE POLICY "Admins full access players" ON players
-  FOR ALL USING (
-    EXISTS (SELECT 1 FROM players WHERE user_id = auth.uid() AND is_admin = true)
-  );
+  FOR ALL USING (is_admin());
 
 -- Admin: acesso total em matches
 CREATE POLICY "Admins full access matches" ON matches
-  FOR ALL USING (
-    EXISTS (SELECT 1 FROM players WHERE user_id = auth.uid() AND is_admin = true)
-  );
+  FOR ALL USING (is_admin());
 
 -- Admin: acesso total em match_sets
 CREATE POLICY "Admins full access match_sets" ON match_sets
-  FOR ALL USING (
-    EXISTS (SELECT 1 FROM players WHERE user_id = auth.uid() AND is_admin = true)
-  );
+  FOR ALL USING (is_admin());
 
 -- Jogador registra resultado das suas próprias partidas
 CREATE POLICY "Players submit match results" ON matches
@@ -120,7 +134,7 @@ CREATE POLICY "Players insert match sets" ON match_sets
 COMMIT;
 
 -- ============================================================
--- 6. Tornar-se admin
+-- 7. Tornar-se admin
 --    Execute APÓS criar sua conta no app
 -- ============================================================
 -- UPDATE players SET is_admin = true
