@@ -38,3 +38,20 @@ export async function updatePlayerNameAction(
   if (error) return { error: error.message };
   return { error: null };
 }
+
+export async function updateAvatarUrlAction(
+  avatar_url: string
+): Promise<{ error: string | null }> {
+  const supabase = await createClient();
+
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { error: "Sessão expirada. Faça login novamente." };
+
+  const { error } = await supabase
+    .from("players")
+    .update({ avatar_url })
+    .eq("user_id", user.id);
+
+  if (error) return { error: error.message };
+  return { error: null };
+}

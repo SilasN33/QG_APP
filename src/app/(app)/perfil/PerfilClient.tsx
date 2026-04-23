@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
 import { Avatar } from "@/components/ui/Avatar";
@@ -8,9 +8,9 @@ import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import {
   LogOut, Trophy, Target, Layers, TrendingUp,
-  Pencil, Check, X, ChevronDown,
+  Pencil, Check, X, ChevronDown, Camera, Loader2,
 } from "lucide-react";
-import { updatePlayerGroupAction, updatePlayerNameAction } from "@/lib/actions/updatePlayer";
+import { updateAvatarUrlAction, updatePlayerGroupAction, updatePlayerNameAction } from "@/lib/actions/updatePlayer";
 import { cn } from "@/utils/cn";
 import type { Player, Standing, GroupLetter } from "@/types";
 
@@ -43,6 +43,12 @@ export function PerfilClient({ player, standing, matchCount }: Props) {
   const [groupSaving, setGroupSaving]         = useState(false);
   const [groupError, setGroupError]           = useState<string | null>(null);
   const [groupSuccess, setGroupSuccess]       = useState(false);
+
+  // Avatar upload state
+  const fileInputRef                        = useRef<HTMLInputElement>(null);
+  const [avatarSrc, setAvatarSrc]           = useState(player.avatar_url);
+  const [avatarUploading, setAvatarUploading] = useState(false);
+  const [avatarError, setAvatarError]       = useState<string | null>(null);
 
   const winRate =
     matchCount > 0 && standing
@@ -80,6 +86,54 @@ export function PerfilClient({ player, standing, matchCount }: Props) {
     router.refresh();
   }
 
+  async function handleAvatarChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const ext = file.name.split(".").pop()?.toLowerCase() ?? "jpg";
+    const allowed = ["jpg", "jpeg", "png", "webp"];
+    if (!allowed.includes(ext)) {
+      setAvatarError("Use uma imagem JPG, PNG ou WebP.");
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      setAvatarError("A imagem deve ter no máximo 5 MB.");
+      return;
+    }
+
+    setAvatarUploading(true);
+    setAvatarError(null);
+
+    const supabase = createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) { setAvatarError("Sessão expirada."); setAvatarUploading(false); return; }
+
+    const path = `${user.id}/avatar.${ext}`;
+    const { error: uploadError } = await supabase.storage
+      .from("avatars")
+      .upload(path, file, { upsert: true, contentType: file.type });
+
+    if (uploadError) {
+      setAvatarError("Erro ao enviar imagem. Tente novamente.");
+      setAvatarUploading(false);
+      return;
+    }
+
+    const { data: { publicUrl } } = supabase.storage.from("avatars").getPublicUrl(path);
+    const urlWithBust = `${publicUrl}?t=${Date.now()}`;
+
+    const { error: dbError } = await updateAvatarUrlAction(urlWithBust);
+    if (dbError) {
+      setAvatarError(dbError);
+      setAvatarUploading(false);
+      return;
+    }
+
+    setAvatarSrc(urlWithBust);
+    setAvatarUploading(false);
+    router.refresh();
+  }
+
   const stats = [
     { icon: <Trophy size={18} className="text-amber-400" />,   label: "Vitórias",        value: standing?.wins ?? 0 },
     { icon: <Target size={18} className="text-clay-400" />,    label: "Aproveitamento",  value: `${winRate}%` },
@@ -93,7 +147,30 @@ export function PerfilClient({ player, standing, matchCount }: Props) {
     <div className="animate-slide-up">
       {/* Header */}
       <div className="bg-green-900 px-4 pt-6 pb-10 flex flex-col items-center gap-3">
-        <Avatar name={nameValue} src={player.avatar_url} size="xl" />
+        <div className="relative">
+          <Avatar name={nameValue} src={avatarSrc} size="xl" />
+          <button
+            onClick={() => fileInputRef.current?.click()}
+            disabled={avatarUploading}
+            className="absolute -bottom-1 -right-1 w-7 h-7 rounded-full bg-clay-500 border-2 border-green-900 flex items-center justify-center shadow-md hover:bg-clay-400 transition-colors disabled:opacity-60"
+            title="Alterar foto de perfil"
+          >
+            {avatarUploading
+              ? <Loader2 size={13} className="text-white animate-spin" />
+              : <Camera size={13} className="text-white" />
+            }
+          </button>
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/jpeg,image/png,image/webp"
+            className="hidden"
+            onChange={handleAvatarChange}
+          />
+        </div>
+        {avatarError && (
+          <p className="text-clay-300 text-xs text-center max-w-[200px]">{avatarError}</p>
+        )}
         <div className="text-center">
           {editingName ? (
             <div className="flex items-center gap-2 justify-center">
