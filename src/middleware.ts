@@ -42,24 +42,29 @@ export async function middleware(request: NextRequest) {
     const { data: { user } } = await supabase.auth.getUser();
     const { pathname } = request.nextUrl;
 
-    const isAuthRoute =
+    const isPublicRoute =
+      pathname === "/" ||
       pathname.startsWith("/login") ||
       pathname.startsWith("/signup") ||
       pathname.startsWith("/onboarding") ||
       pathname.startsWith("/setup");
 
-    if (!user && !isAuthRoute) {
+    if (!user && !isPublicRoute) {
       return NextResponse.redirect(new URL("/login", request.url));
     }
 
-    if (user && (pathname.startsWith("/login") || pathname.startsWith("/signup"))) {
+    if (user && (pathname === "/" || pathname.startsWith("/login") || pathname.startsWith("/signup"))) {
       return NextResponse.redirect(new URL("/dashboard", request.url));
     }
   } catch {
     // Se o Supabase falhar (credenciais inválidas, sem rede), redireciona
     // para login em vez de travar tudo com tela branca.
     const { pathname } = request.nextUrl;
-    if (!pathname.startsWith("/login") && !pathname.startsWith("/signup")) {
+    const isPublicOnError =
+      pathname === "/" ||
+      pathname.startsWith("/login") ||
+      pathname.startsWith("/signup");
+    if (!isPublicOnError) {
       return NextResponse.redirect(new URL("/login", request.url));
     }
   }
