@@ -1,7 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { createClient } from "@/lib/supabase/client";
+import { createPlayerAction } from "@/lib/actions/createPlayer";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/Button";
 import { User } from "lucide-react";
@@ -13,6 +14,14 @@ export default function SetupPage() {
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
 
+  // Pré-preenche o nome se o usuário passou pelo signup com confirmação de email
+  useEffect(() => {
+    createClient().auth.getUser().then(({ data: { user } }) => {
+      const savedName = user?.user_metadata?.display_name as string | undefined;
+      if (savedName) setName(savedName);
+    });
+  }, []);
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!name.trim()) return;
@@ -20,20 +29,10 @@ export default function SetupPage() {
     setLoading(true);
     setError(null);
 
-    const supabase = createClient();
-    const { data: { user } } = await supabase.auth.getUser();
+    const { error: actionError } = await createPlayerAction(name.trim());
 
-    if (!user) {
-      router.push("/login");
-      return;
-    }
-
-    const { error: insertError } = await supabase
-      .from("players")
-      .insert({ name: name.trim(), user_id: user.id });
-
-    if (insertError) {
-      setError("Erro ao criar perfil. Tente novamente.");
+    if (actionError) {
+      setError(actionError);
       setLoading(false);
       return;
     }
@@ -51,7 +50,7 @@ export default function SetupPage() {
       <div className="text-center mb-8">
         <h1 className="text-2xl font-black text-white">Completar Cadastro</h1>
         <p className="text-green-400 text-sm mt-1 max-w-xs">
-          Sua conta foi criada. Informe seu nome para entrar no torneio.
+          Informe seu nome para entrar no torneio.
         </p>
       </div>
 

@@ -2,9 +2,10 @@
 
 import { useState } from "react";
 import { createClient } from "@/lib/supabase/client";
+import { createPlayerAction } from "@/lib/actions/createPlayer";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/Button";
-import { Eye, EyeOff, Lock, Mail, User } from "lucide-react";
+import { Eye, EyeOff, Lock, Mail, User, CheckCircle } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 
@@ -16,29 +17,28 @@ export default function SignupPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [emailSent, setEmailSent] = useState(false);
   const router = useRouter();
 
   async function handleSignup(e: React.FormEvent) {
     e.preventDefault();
-    if (!name.trim()) {
-      setError("Digite seu nome completo.");
-      return;
-    }
-    if (password !== confirmPassword) {
-      setError("As senhas não coincidem.");
-      return;
-    }
-    if (password.length < 6) {
-      setError("A senha deve ter pelo menos 6 caracteres.");
-      return;
-    }
+    if (!name.trim()) { setError("Digite seu nome completo."); return; }
+    if (password !== confirmPassword) { setError("As senhas não coincidem."); return; }
+    if (password.length < 6) { setError("A senha deve ter pelo menos 6 caracteres."); return; }
 
     setLoading(true);
     setError(null);
 
     const supabase = createClient();
 
-    const { data, error: signUpError } = await supabase.auth.signUp({ email, password });
+    const { data, error: signUpError } = await supabase.auth.signUp({
+      email,
+      password,
+      options: {
+        // Guarda o nome nos metadados para uso no /setup após confirmação de email
+        data: { display_name: name.trim() },
+      },
+    });
 
     if (signUpError || !data.user) {
       setError(
@@ -50,19 +50,41 @@ export default function SignupPage() {
       return;
     }
 
-    // Auto-create player profile with the user's name
-    const { error: playerError } = await supabase
-      .from("players")
-      .insert({ name: name.trim(), user_id: data.user.id });
-
-    if (playerError) {
-      setError("Conta criada, mas houve um erro ao criar seu perfil. Contacte o organizador.");
+    if (data.session) {
+      // Email confirmation desativado — sessão imediata, cria o player agora
+      const { error: playerError } = await createPlayerAction(name.trim());
+      if (playerError) {
+        setError("Conta criada, mas erro ao criar perfil. Tente fazer login.");
+        setLoading(false);
+        return;
+      }
+      router.push("/dashboard");
+      router.refresh();
+    } else {
+      // Email confirmation ativado — aguarda confirmação antes de criar perfil
+      setEmailSent(true);
       setLoading(false);
-      return;
     }
+  }
 
-    router.push("/dashboard");
-    router.refresh();
+  if (emailSent) {
+    return (
+      <div className="min-h-screen bg-green-900 flex flex-col items-center justify-center px-6">
+        <div className="w-20 h-20 rounded-full bg-green-800 border-2 border-green-700 flex items-center justify-center shadow-lg mb-6">
+          <CheckCircle size={36} className="text-green-300" />
+        </div>
+        <div className="text-center max-w-xs">
+          <h1 className="text-2xl font-black text-white mb-2">Verifique seu email</h1>
+          <p className="text-green-400 text-sm">
+            Enviamos um link de confirmação para <strong className="text-green-200">{email}</strong>.
+            Clique no link e depois faça login para entrar no torneio.
+          </p>
+          <Link href="/login" className="mt-6 inline-block text-clay-400 font-bold text-sm hover:text-clay-300">
+            Ir para o login →
+          </Link>
+        </div>
+      </div>
+    );
   }
 
   return (
@@ -74,9 +96,7 @@ export default function SignupPage() {
 
         <div className="text-center mb-8">
           <h1 className="text-2xl font-black text-white">Criar Conta</h1>
-          <p className="text-green-400 text-sm mt-1">
-            Acesso exclusivo para jogadores do QG Open 2026
-          </p>
+          <p className="text-green-400 text-sm mt-1">Acesso exclusivo para jogadores do QG Open 2026</p>
         </div>
 
         <div className="w-full max-w-sm">
@@ -87,14 +107,9 @@ export default function SignupPage() {
               </label>
               <div className="relative">
                 <User size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-green-500" />
-                <input
-                  type="text"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  placeholder="Seu nome completo"
-                  required
-                  className="w-full bg-green-800/60 border border-green-700 text-white placeholder-green-600 rounded-xl pl-10 pr-4 py-3 text-sm focus:outline-none focus:border-clay-400 focus:ring-1 focus:ring-clay-400 transition-colors"
-                />
+                <input type="text" value={name} onChange={(e) => setName(e.target.value)}
+                  placeholder="Seu nome completo" required
+                  className="w-full bg-green-800/60 border border-green-700 text-white placeholder-green-600 rounded-xl pl-10 pr-4 py-3 text-sm focus:outline-none focus:border-clay-400 focus:ring-1 focus:ring-clay-400 transition-colors" />
               </div>
             </div>
 
@@ -104,14 +119,9 @@ export default function SignupPage() {
               </label>
               <div className="relative">
                 <Mail size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-green-500" />
-                <input
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="seu@email.com"
-                  required
-                  className="w-full bg-green-800/60 border border-green-700 text-white placeholder-green-600 rounded-xl pl-10 pr-4 py-3 text-sm focus:outline-none focus:border-clay-400 focus:ring-1 focus:ring-clay-400 transition-colors"
-                />
+                <input type="email" value={email} onChange={(e) => setEmail(e.target.value)}
+                  placeholder="seu@email.com" required
+                  className="w-full bg-green-800/60 border border-green-700 text-white placeholder-green-600 rounded-xl pl-10 pr-4 py-3 text-sm focus:outline-none focus:border-clay-400 focus:ring-1 focus:ring-clay-400 transition-colors" />
               </div>
             </div>
 
@@ -121,19 +131,11 @@ export default function SignupPage() {
               </label>
               <div className="relative">
                 <Lock size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-green-500" />
-                <input
-                  type={showPassword ? "text" : "password"}
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  placeholder="Mínimo 6 caracteres"
-                  required
-                  className="w-full bg-green-800/60 border border-green-700 text-white placeholder-green-600 rounded-xl pl-10 pr-11 py-3 text-sm focus:outline-none focus:border-clay-400 focus:ring-1 focus:ring-clay-400 transition-colors"
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3.5 top-1/2 -translate-y-1/2 text-green-500"
-                >
+                <input type={showPassword ? "text" : "password"} value={password}
+                  onChange={(e) => setPassword(e.target.value)} placeholder="Mínimo 6 caracteres" required
+                  className="w-full bg-green-800/60 border border-green-700 text-white placeholder-green-600 rounded-xl pl-10 pr-11 py-3 text-sm focus:outline-none focus:border-clay-400 focus:ring-1 focus:ring-clay-400 transition-colors" />
+                <button type="button" onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3.5 top-1/2 -translate-y-1/2 text-green-500">
                   {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
                 </button>
               </div>
@@ -145,14 +147,9 @@ export default function SignupPage() {
               </label>
               <div className="relative">
                 <Lock size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-green-500" />
-                <input
-                  type={showPassword ? "text" : "password"}
-                  value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
-                  placeholder="Repita a senha"
-                  required
-                  className="w-full bg-green-800/60 border border-green-700 text-white placeholder-green-600 rounded-xl pl-10 pr-4 py-3 text-sm focus:outline-none focus:border-clay-400 focus:ring-1 focus:ring-clay-400 transition-colors"
-                />
+                <input type={showPassword ? "text" : "password"} value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)} placeholder="Repita a senha" required
+                  className="w-full bg-green-800/60 border border-green-700 text-white placeholder-green-600 rounded-xl pl-10 pr-4 py-3 text-sm focus:outline-none focus:border-clay-400 focus:ring-1 focus:ring-clay-400 transition-colors" />
               </div>
             </div>
 
@@ -170,9 +167,7 @@ export default function SignupPage() {
           <div className="mt-6 text-center">
             <p className="text-green-500 text-sm">
               Já tem conta?{" "}
-              <Link href="/login" className="text-clay-400 font-bold hover:text-clay-300">
-                Entrar
-              </Link>
+              <Link href="/login" className="text-clay-400 font-bold hover:text-clay-300">Entrar</Link>
             </p>
           </div>
         </div>
