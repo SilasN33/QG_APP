@@ -17,9 +17,9 @@ export default async function AppLayout({
 
   const player = await getPlayerByUserId(user.id);
 
-  // Player record not found — this shouldn't happen with the new signup flow,
-  // but if it does, send back to login so they can re-authenticate.
-  if (!player) redirect("/login");
+  // Player record not found — user is authenticated but has no profile.
+  // Send to /setup instead of /login to avoid a redirect loop with the middleware.
+  if (!player) redirect("/setup");
 
   return (
     <PlayerProvider player={player}>

@@ -45,7 +45,8 @@ export async function middleware(request: NextRequest) {
     const isAuthRoute =
       pathname.startsWith("/login") ||
       pathname.startsWith("/signup") ||
-      pathname.startsWith("/onboarding");
+      pathname.startsWith("/onboarding") ||
+      pathname.startsWith("/setup");
 
     if (!user && !isAuthRoute) {
       return NextResponse.redirect(new URL("/login", request.url));
