@@ -96,24 +96,22 @@ export function DashboardClient({ player, myMatches, standing }: Props) {
               </span>
             </div>
             <div className="flex items-center gap-3">
-              {[nextMatch.player1, nextMatch.player2].map((p, i) => (
-                <div key={i} className={`flex-1 flex flex-col items-center gap-1 ${i === 1 ? "" : ""}`}>
-                  <Avatar name={p?.name ?? "?"} size="md" />
-                  <span className="text-xs font-semibold text-gray-800 text-center leading-tight">
-                    {p?.name?.split(" ")[0] ?? "A definir"}
-                  </span>
-                </div>
-              )).reduce((acc, el, i) =>
-                i === 0
-                  ? [el]
-                  : [...acc,
-                    <div key="vs" className="flex flex-col items-center gap-0.5">
-                      <span className="text-gray-300 font-black text-lg">VS</span>
-                      {nextMatch.court && <span className="text-[10px] text-gray-400">{nextMatch.court}</span>}
-                    </div>,
-                    el],
-                [] as React.ReactNode[]
-              )}
+              <div className="flex-1 flex flex-col items-center gap-1">
+                <Avatar name={nextMatch.player1?.name ?? "?"} size="md" />
+                <span className="text-xs font-semibold text-gray-800 text-center leading-tight">
+                  {nextMatch.player1?.name?.split(" ")[0] ?? "A definir"}
+                </span>
+              </div>
+              <div className="flex flex-col items-center gap-0.5">
+                <span className="text-gray-300 font-black text-lg">VS</span>
+                {nextMatch.court && <span className="text-[10px] text-gray-400">{nextMatch.court}</span>}
+              </div>
+              <div className="flex-1 flex flex-col items-center gap-1">
+                <Avatar name={nextMatch.player2?.name ?? "?"} size="md" />
+                <span className="text-xs font-semibold text-gray-800 text-center leading-tight">
+                  {nextMatch.player2?.name?.split(" ")[0] ?? "A definir"}
+                </span>
+              </div>
             </div>
             {nextMatch.group_letter && (
               <p className="text-center text-[11px] text-gray-400 mt-2">
