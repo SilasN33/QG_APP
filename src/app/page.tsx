@@ -14,10 +14,39 @@ type GroupedStanding = { letter: GroupLetter; standings: Standing[] };
 
 const EMPTY_GROUPS: GroupedStanding[] = GROUPS.map((g) => ({ letter: g, standings: [] }));
 
+// 27 abr 2026 às 00:00 BRT (UTC-3)
+const TOURNAMENT_START = new Date("2026-04-27T03:00:00Z");
+
+type Countdown = { d: number; h: number; m: number; s: number };
+
+function useCountdown(): { countdown: Countdown | null; started: boolean } {
+  const [countdown, setCountdown] = useState<Countdown | null>(null);
+  const [started, setStarted]     = useState(false);
+
+  useEffect(() => {
+    function tick() {
+      const diff = TOURNAMENT_START.getTime() - Date.now();
+      if (diff <= 0) { setStarted(true); setCountdown(null); return; }
+      setCountdown({
+        d: Math.floor(diff / 86_400_000),
+        h: Math.floor((diff % 86_400_000) / 3_600_000),
+        m: Math.floor((diff % 3_600_000)  / 60_000),
+        s: Math.floor((diff % 60_000)     / 1_000),
+      });
+    }
+    tick();
+    const id = setInterval(tick, 1000);
+    return () => clearInterval(id);
+  }, []);
+
+  return { countdown, started };
+}
+
 export default function LandingPage() {
   const [grouped, setGrouped]               = useState<GroupedStanding[]>(EMPTY_GROUPS);
   const [totalPlayers, setTotalPlayers]     = useState(0);
   const [completedMatches, setCompleted]    = useState<number | null>(null);
+  const { countdown, started }              = useCountdown();
 
   useEffect(() => {
     async function load() {
@@ -112,6 +141,45 @@ export default function LandingPage() {
             Compita · Supere · Seja Lendário
           </p>
 
+          {/* ── Countdown ── */}
+          <div className="mt-8 animate-slide-up" style={{ animationDelay: "0.16s" }}>
+            {started ? (
+              <div className="inline-flex items-center gap-2 bg-lime-500/10 border border-lime-500/30 rounded-2xl px-5 py-2.5">
+                <span className="w-2 h-2 rounded-full bg-lime-500 shadow-glow inline-block animate-pulse" />
+                <span className="font-display font-bold text-lime-400 text-sm tracking-wide">
+                  Torneio em andamento
+                </span>
+              </div>
+            ) : (
+              <div>
+                <p className="text-white/25 text-[9px] font-bold uppercase tracking-[0.28em] mb-3">
+                  Começa em
+                </p>
+                <div className="inline-flex items-center gap-1">
+                  {countdown ? (
+                    <>
+                      <CountUnit value={countdown.d} label="dias" />
+                      <Colon />
+                      <CountUnit value={countdown.h} label="hrs" />
+                      <Colon />
+                      <CountUnit value={countdown.m} label="min" />
+                      <Colon />
+                      <CountUnit value={countdown.s} label="seg" highlight />
+                    </>
+                  ) : (
+                    /* placeholder antes do primeiro tick */
+                    [["—","dias"],["—","hrs"],["—","min"],["—","seg"]].map(([v, l], i) => (
+                      <span key={i} className="flex items-center gap-1">
+                        {i > 0 && <Colon />}
+                        <CountUnit value={v} label={l} />
+                      </span>
+                    ))
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
+
           {/* Stats bar — only shown once data loads */}
           {totalPlayers > 0 && (
             <div
@@ -188,6 +256,27 @@ export default function LandingPage() {
 }
 
 /* ─── Sub-components ─── */
+
+function CountUnit({ value, label, highlight }: { value: number | string; label: string; highlight?: boolean }) {
+  const display = typeof value === "number" ? String(value).padStart(2, "0") : value;
+  return (
+    <div className="flex flex-col items-center bg-surface-0/50 border border-white/[0.07] rounded-xl px-3 py-2 min-w-[56px]">
+      <span
+        className={cn(
+          "font-display font-bold text-2xl leading-none tabular-nums",
+          highlight ? "text-lime-500 lime-glow" : "text-white"
+        )}
+      >
+        {display}
+      </span>
+      <span className="text-white/25 text-[9px] uppercase tracking-widest font-semibold mt-1">{label}</span>
+    </div>
+  );
+}
+
+function Colon() {
+  return <span className="font-display font-bold text-white/20 text-xl mb-3 select-none">:</span>;
+}
 
 function StatPill({ label, value, accent }: { label: string; value: number | string; accent?: boolean }) {
   return (
