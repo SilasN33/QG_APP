@@ -1,39 +1,71 @@
-import { getAllPlayers } from "@/lib/queries/players";
-import { getAllMatches } from "@/lib/queries/matches";
+"use client";
+
+import { useEffect, useState } from "react";
+import { createClient } from "@/lib/supabase/client";
 import { computeAllStandings } from "@/lib/queries/standings";
 import { Avatar } from "@/components/ui/Avatar";
 import { cn } from "@/utils/cn";
 import Link from "next/link";
-import type { Standing, GroupLetter } from "@/types";
+import type { Player, Match, Standing, GroupLetter } from "@/types";
 
 const GROUPS: GroupLetter[] = ["A", "B", "C", "D"];
 
-export const dynamic = "force-dynamic";
+type GroupedStanding = { letter: GroupLetter; standings: Standing[] };
 
-export default async function LandingPage() {
-  let allStandings: Standing[] = [];
+const EMPTY_GROUPS: GroupedStanding[] = GROUPS.map((g) => ({ letter: g, standings: [] }));
 
-  try {
-    const [players, matches] = await Promise.all([
-      getAllPlayers(),
-      getAllMatches(),
-    ]);
-    allStandings = computeAllStandings(players, matches);
-  } catch {
-    // Supabase unavailable — render empty state gracefully
-  }
+export default function LandingPage() {
+  const [grouped, setGrouped]               = useState<GroupedStanding[]>(EMPTY_GROUPS);
+  const [totalPlayers, setTotalPlayers]     = useState(0);
+  const [completedMatches, setCompleted]    = useState<number | null>(null);
 
-  const groupedStandings = GROUPS.map((g) => ({
-    letter: g,
-    standings: allStandings
-      .filter((s) => s.group_letter === g)
-      .sort((a, b) => a.position - b.position),
-  }));
+  useEffect(() => {
+    async function load() {
+      try {
+        const supabase = createClient();
 
-  const totalPlayers = allStandings.length;
-  const completedMatches = Math.round(
-    allStandings.reduce((acc, s) => acc + s.matches_played, 0) / 2
-  );
+        const [{ data: pd }, { data: md }] = await Promise.all([
+          supabase
+            .from("players")
+            .select("id, name, avatar_url, group_letter, user_id, is_admin, created_at")
+            .order("group_letter")
+            .order("name"),
+          supabase
+            .from("matches")
+            .select(
+              "id, player1_id, player2_id, group_letter, phase, round, scheduled_at, status, winner_id, court, created_at, match_sets(*)"
+            )
+            .order("scheduled_at", { ascending: true, nullsFirst: false }),
+        ]);
+
+        const players = (pd ?? []) as Player[];
+
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const matches = ((md ?? []) as any[]).map((m) => ({
+          ...m,
+          sets: m.match_sets ?? [],
+        })) as Match[];
+
+        const allStandings = computeAllStandings(players, matches);
+
+        setTotalPlayers(players.filter((p) => p.group_letter !== null).length);
+        setCompleted(
+          Math.round(allStandings.reduce((a, s) => a + s.matches_played, 0) / 2)
+        );
+        setGrouped(
+          GROUPS.map((g) => ({
+            letter: g,
+            standings: allStandings
+              .filter((s) => s.group_letter === g)
+              .sort((a, b) => a.position - b.position),
+          }))
+        );
+      } catch {
+        // Supabase indisponível — mantém grupos vazios
+      }
+    }
+    load();
+  }, []);
 
   return (
     <div className="min-h-screen bg-surface-1">
@@ -59,10 +91,16 @@ export default async function LandingPage() {
 
           {/* Title */}
           <div className="animate-slide-up" style={{ animationDelay: "0.06s" }}>
-            <h1 className="font-display font-bold text-white leading-none tracking-tight" style={{ fontSize: "clamp(3rem, 16vw, 5rem)" }}>
+            <h1
+              className="font-display font-bold text-white leading-none tracking-tight"
+              style={{ fontSize: "clamp(3rem, 16vw, 5rem)" }}
+            >
               QG OPEN
             </h1>
-            <p className="font-display font-bold text-lime-500 leading-none mt-1 lime-glow" style={{ fontSize: "clamp(2rem, 12vw, 3.5rem)" }}>
+            <p
+              className="font-display font-bold text-lime-500 leading-none mt-1 lime-glow"
+              style={{ fontSize: "clamp(2rem, 12vw, 3.5rem)" }}
+            >
               2026
             </p>
           </div>
@@ -74,7 +112,7 @@ export default async function LandingPage() {
             Compita · Supere · Seja Lendário
           </p>
 
-          {/* Stats bar */}
+          {/* Stats bar — only shown once data loads */}
           {totalPlayers > 0 && (
             <div
               className="flex items-center justify-center gap-6 mt-8 animate-slide-up"
@@ -84,7 +122,7 @@ export default async function LandingPage() {
               <div className="w-px h-8 bg-white/10" />
               <StatPill label="Grupos" value={GROUPS.length} />
               <div className="w-px h-8 bg-white/10" />
-              <StatPill label="Partidas" value={completedMatches || "—"} />
+              <StatPill label="Partidas" value={completedMatches ?? "—"} />
             </div>
           )}
 
@@ -116,7 +154,7 @@ export default async function LandingPage() {
         </p>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          {groupedStandings.map(({ letter, standings }, idx) => (
+          {grouped.map(({ letter, standings }, idx) => (
             <GroupCard
               key={letter}
               letter={letter}
@@ -196,9 +234,22 @@ function GroupCard({
       {/* Player rows */}
       <div className="divide-y divide-white/[0.03]">
         {standings.length === 0 ? (
-          <div className="py-9 text-center text-white/15 text-sm font-medium">
-            Em breve...
-          </div>
+          /* Skeleton rows while loading */
+          [1, 2, 3, 4].map((n) => (
+            <div key={n} className="flex items-center gap-3 px-4 py-3">
+              <div className="w-5 h-5 rounded-full bg-surface-3 shrink-0 animate-pulse" />
+              <div className="w-10 h-10 rounded-full bg-surface-3 shrink-0 animate-pulse" />
+              <div className="flex-1 space-y-1.5">
+                <div className="h-3 bg-surface-3 rounded-full w-3/4 animate-pulse" />
+                <div className="h-2 bg-surface-3 rounded-full w-1/3 animate-pulse" />
+              </div>
+              <div className="flex gap-3">
+                {[1, 2, 3].map((i) => (
+                  <div key={i} className="w-5 h-3 bg-surface-3 rounded animate-pulse" />
+                ))}
+              </div>
+            </div>
+          ))
         ) : (
           standings.map((s, i) => {
             const classified = i < 2;
@@ -207,7 +258,6 @@ function GroupCard({
                 key={s.player.id}
                 className={cn("flex items-center gap-3 px-4 py-3", classified && "bg-lime-500/[0.03]")}
               >
-                {/* Position */}
                 <span
                   className={cn(
                     "w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-display font-bold shrink-0",
@@ -219,7 +269,6 @@ function GroupCard({
                   {s.position}
                 </span>
 
-                {/* Avatar */}
                 <Avatar
                   name={s.player.name}
                   src={s.player.avatar_url}
@@ -227,7 +276,6 @@ function GroupCard({
                   className={cn(!classified && "opacity-40")}
                 />
 
-                {/* Name + matches */}
                 <div className="flex-1 min-w-0">
                   <p
                     className={cn(
@@ -242,22 +290,12 @@ function GroupCard({
                   </p>
                 </div>
 
-                {/* Stats */}
                 <div className="flex items-center gap-3 shrink-0">
-                  <span
-                    className={cn(
-                      "font-display font-bold text-sm w-5 text-center",
-                      classified ? "text-white/80" : "text-white/25"
-                    )}
-                  >
+                  <span className={cn("font-display font-bold text-sm w-5 text-center", classified ? "text-white/80" : "text-white/25")}>
                     {s.points}
                   </span>
-                  <span className="text-lime-500/70 font-bold text-xs w-5 text-center">
-                    {s.wins}
-                  </span>
-                  <span className="text-red-400/40 text-xs w-5 text-center">
-                    {s.losses}
-                  </span>
+                  <span className="text-lime-500/70 font-bold text-xs w-5 text-center">{s.wins}</span>
+                  <span className="text-red-400/40 text-xs w-5 text-center">{s.losses}</span>
                 </div>
               </div>
             );
