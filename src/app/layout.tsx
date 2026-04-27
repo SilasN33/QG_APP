@@ -2,9 +2,24 @@ import type { Metadata, Viewport } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "QG Open 2026",
+  title: {
+    default: "QG Open 2026",
+    template: "%s · QG Open 2026",
+  },
   description: "Campeonato de Tênis QG Open 2026 — Compita. Supere. Seja Lendário.",
   manifest: "/manifest.json",
+  openGraph: {
+    title: "QG Open 2026",
+    description: "Campeonato de Tênis QG Open 2026 — Compita. Supere. Seja Lendário.",
+    type: "website",
+    locale: "pt_BR",
+    siteName: "QG Open 2026",
+  },
+  twitter: {
+    card: "summary",
+    title: "QG Open 2026",
+    description: "Campeonato de Tênis QG Open 2026 — Compita. Supere. Seja Lendário.",
+  },
 };
 
 export const viewport: Viewport = {
