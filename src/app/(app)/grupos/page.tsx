@@ -1,4 +1,7 @@
+import type { Metadata } from "next";
 import { getAllPlayers } from "@/lib/queries/players";
+
+export const metadata: Metadata = { title: "Grupos" };
 import { getAllMatches } from "@/lib/queries/matches";
 import { computeAllStandings } from "@/lib/queries/standings";
 import { GruposClient } from "./GruposClient";

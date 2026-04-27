@@ -1,5 +1,8 @@
+import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+
+export const metadata: Metadata = { title: "Dashboard" };
 import { getPlayerByUserId } from "@/lib/queries/players";
 import { getMatchesByPlayer, getAllMatches } from "@/lib/queries/matches";
 import { getAllPlayers } from "@/lib/queries/players";

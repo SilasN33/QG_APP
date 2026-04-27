@@ -1,6 +1,9 @@
+import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { getAllMatches } from "@/lib/queries/matches";
+
+export const metadata: Metadata = { title: "Calendário" };
 import { getAllPlayers, getPlayerByUserId } from "@/lib/queries/players";
 import { CalendarioClient } from "./CalendarioClient";
 

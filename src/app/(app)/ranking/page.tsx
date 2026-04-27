@@ -1,5 +1,8 @@
+import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+
+export const metadata: Metadata = { title: "Ranking" };
 import { getPlayerByUserId, getAllPlayers } from "@/lib/queries/players";
 import { getAllMatches } from "@/lib/queries/matches";
 import { computeAllStandings, computeGlobalRanking } from "@/lib/queries/standings";
