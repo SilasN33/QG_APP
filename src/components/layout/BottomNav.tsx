@@ -22,7 +22,7 @@ export function BottomNav() {
   const navItems = player?.is_admin ? [...baseNavItems, adminNavItem] : baseNavItems;
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 z-50 flex justify-center pb-5 px-4 pointer-events-none">
+    <div className="md:hidden fixed bottom-0 left-0 right-0 z-50 flex justify-center pb-5 px-4 pointer-events-none">
       <nav className="pointer-events-auto flex items-center h-[62px] bg-surface-3/95 backdrop-blur-2xl shadow-nav rounded-[22px] border border-white/[0.09] px-1.5 gap-0.5">
         {navItems.map(({ href, label, Icon }) => {
           const active = pathname === href || pathname.startsWith(href + "/");
