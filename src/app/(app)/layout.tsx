@@ -4,6 +4,8 @@ import { getPlayerByUserId } from "@/lib/queries/players";
 import { AppHeader } from "@/components/layout/AppHeader";
 import { BottomNav } from "@/components/layout/BottomNav";
 import { PlayerProvider } from "@/components/layout/PlayerProvider";
+import { ContextPanelProvider } from "@/components/layout/ContextPanelProvider";
+import { ContextPanel } from "@/components/layout/ContextPanel";
 
 export default async function AppLayout({
   children,
@@ -20,11 +22,14 @@ export default async function AppLayout({
 
   return (
     <PlayerProvider player={player}>
-      <div className="min-h-screen bg-surface-1">
-        <AppHeader />
-        <main className="pt-14 pb-28 max-w-md mx-auto">{children}</main>
-        <BottomNav />
-      </div>
+      <ContextPanelProvider>
+        <div className="min-h-screen bg-surface-1">
+          <AppHeader />
+          <main className="pt-14 pb-28 max-w-md mx-auto">{children}</main>
+          <BottomNav />
+          <ContextPanel />
+        </div>
+      </ContextPanelProvider>
     </PlayerProvider>
   );
 }

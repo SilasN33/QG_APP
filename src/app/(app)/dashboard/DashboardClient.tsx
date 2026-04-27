@@ -5,8 +5,9 @@ import { Badge } from "@/components/ui/Badge";
 import { Card } from "@/components/ui/Card";
 import {
   Calendar, ClipboardEdit, BarChart2,
-  CheckCircle2, Clock, XCircle, Minus, ChevronRight, Crown,
+  CheckCircle2, Clock, XCircle, Minus, ChevronRight, Crown, CalendarPlus,
 } from "lucide-react";
+import { useContextPanel } from "@/components/layout/ContextPanelProvider";
 import Link from "next/link";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -40,6 +41,7 @@ interface Props {
 }
 
 export function DashboardClient({ player, myMatches, standing }: Props) {
+  const { openPanel } = useContextPanel();
   const nextMatch     = myMatches.find((m) => m.status === "scheduled");
   const recentMatches = myMatches
     .filter((m) => m.status === "completed" || m.status === "wo")
@@ -169,7 +171,7 @@ export function DashboardClient({ player, myMatches, standing }: Props) {
           <span className="text-[10px] font-display font-bold uppercase tracking-widest text-white/25 mb-3 block px-1">
             Ações
           </span>
-          <div className="grid grid-cols-3 gap-2.5">
+          <div className="grid grid-cols-3 gap-2.5 mb-2.5">
             <Link href="/calendario">
               <div className="bg-green-900 border border-white/[0.06] rounded-2xl p-4 flex flex-col items-center gap-2.5 active:scale-95 transition-transform">
                 <Calendar size={20} className="text-lime-500" />
@@ -195,6 +197,21 @@ export function DashboardClient({ player, myMatches, standing }: Props) {
               </div>
             </Link>
           </div>
+
+          {/* Agendar partida — abre o painel contextual */}
+          <button
+            onClick={() => openPanel("schedule-match")}
+            className="w-full flex items-center gap-3 bg-surface-2 border border-lime-500/20 hover:border-lime-500/40 rounded-2xl px-4 py-3.5 active:scale-[0.98] transition-all group"
+          >
+            <div className="w-9 h-9 rounded-xl bg-lime-500/10 group-hover:bg-lime-500/15 flex items-center justify-center transition-colors">
+              <CalendarPlus size={18} className="text-lime-500" />
+            </div>
+            <div className="flex-1 text-left">
+              <p className="text-white/80 font-semibold text-sm">Agendar Partida</p>
+              <p className="text-white/30 text-xs">Marque um jogo com seu adversário</p>
+            </div>
+            <ChevronRight size={16} className="text-white/20 group-hover:text-lime-500/50 transition-colors" />
+          </button>
         </div>
 
         {/* Match history */}
