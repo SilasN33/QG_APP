@@ -566,7 +566,6 @@ export function CalendarioClient({ allMatches, allPlayers, currentPlayer }: Prop
               <MatchResultPanel
                 match={resultMatch}
                 currentPlayerId={currentPlayer?.id ?? ""}
-                onClose={() => setResultMatch(null)}
                 onSuccess={() => {
                   setResultMatch(null);
                   router.refresh();
