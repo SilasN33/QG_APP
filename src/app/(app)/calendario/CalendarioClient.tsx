@@ -15,9 +15,10 @@ import {
 import { ptBR } from "date-fns/locale";
 import {
   ChevronLeft, ChevronRight, Plus, X, Search,
-  Clock, MapPin, Check, Loader2, ClipboardList,
+  Clock, MapPin, Check, Loader2, ClipboardList, Trash2, AlertTriangle,
 } from "lucide-react";
 import { scheduleMatchAction } from "@/lib/actions/scheduleMatch";
+import { deleteMatchAction } from "@/lib/actions/deleteMatch";
 import type { Match, Player } from "@/types";
 
 type FilterType = "todos" | "grupos" | "quartas" | "semi" | "final";
@@ -78,6 +79,11 @@ export function CalendarioClient({ allMatches, allPlayers, currentPlayer }: Prop
 
   // Result modal state
   const [resultMatch, setResultMatch] = useState<Match | null>(null);
+
+  // Delete confirm state
+  const [deleteMatch, setDeleteMatch] = useState<Match | null>(null);
+  const [deleting, setDeleting]       = useState(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
 
   const calendarDays = useMemo(() => {
     const start = startOfWeek(startOfMonth(currentMonth), { weekStartsOn: 1 });
@@ -171,6 +177,24 @@ export function CalendarioClient({ allMatches, allPlayers, currentPlayer }: Prop
 
   function canRegisterResult(match: Match): boolean {
     return isMyMatch(match) && (match.status === "scheduled" || match.status === "pending_result");
+  }
+
+  function canDelete(match: Match): boolean {
+    return isMyMatch(match) && (match.status === "scheduled" || match.status === "pending_result");
+  }
+
+  async function handleDelete() {
+    if (!deleteMatch) return;
+    setDeleting(true);
+    setDeleteError(null);
+    const { error } = await deleteMatchAction(deleteMatch.id);
+    setDeleting(false);
+    if (error) {
+      setDeleteError(error);
+    } else {
+      setDeleteMatch(null);
+      router.refresh();
+    }
   }
 
   const weekDays = ["Seg", "Ter", "Qua", "Qui", "Sex", "Sáb", "Dom"];
@@ -316,6 +340,7 @@ export function CalendarioClient({ allMatches, allPlayers, currentPlayer }: Prop
                     )}
                     onClick={() => canRegister && setResultMatch(m)}
                   >
+
                     <div className="text-right min-w-[36px]">
                       <span className="text-xs font-semibold text-white/35">
                         {m.scheduled_at
@@ -368,12 +393,20 @@ export function CalendarioClient({ allMatches, allPlayers, currentPlayer }: Prop
                         </div>
                       </div>
                     </div>
-                    <div className="shrink-0 flex items-center gap-2">
+                    <div className="shrink-0 flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
                       {canRegister && (
-                        <span className="flex items-center gap-1 text-[10px] font-bold text-lime-500/70 bg-lime-500/10 border border-lime-500/20 px-2 py-1 rounded-lg">
+                        <span className="flex items-center gap-1 text-[10px] font-bold text-lime-500/70 bg-lime-500/10 border border-lime-500/20 px-2 py-1 rounded-lg pointer-events-none">
                           <ClipboardList size={10} />
                           Registrar
                         </span>
+                      )}
+                      {canDelete(m) && (
+                        <button
+                          onClick={(e) => { e.stopPropagation(); setDeleteError(null); setDeleteMatch(m); }}
+                          className="w-7 h-7 flex items-center justify-center rounded-lg text-white/25 hover:text-red-400 hover:bg-red-500/10 transition-colors"
+                        >
+                          <Trash2 size={13} />
+                        </button>
                       )}
                       {m.status === "completed" && <Badge variant="victory" className="text-[9px]">Concluído</Badge>}
                       {m.status === "scheduled" && !canRegister && <Badge variant="pending" className="text-[9px]">Pendente</Badge>}
@@ -571,6 +604,71 @@ export function CalendarioClient({ allMatches, allPlayers, currentPlayer }: Prop
                   router.refresh();
                 }}
               />
+            </div>
+          </div>
+        </div>
+      )}
+      {/* Delete confirmation modal */}
+      {deleteMatch && (
+        <div className="fixed inset-0 z-50 flex flex-col justify-end">
+          <div
+            className="absolute inset-0 bg-black/70 backdrop-blur-sm"
+            onClick={() => !deleting && setDeleteMatch(null)}
+          />
+          <div className="relative bg-surface-2 border-t border-white/[0.08] rounded-t-3xl animate-slide-up">
+            <div className="flex justify-center pt-3 pb-1">
+              <div className="w-10 h-1 rounded-full bg-white/[0.12]" />
+            </div>
+
+            <div className="px-5 pt-3 pb-8">
+              <div className="flex items-center gap-3 mb-5">
+                <div className="w-10 h-10 rounded-full bg-red-500/15 flex items-center justify-center shrink-0">
+                  <AlertTriangle size={18} className="text-red-400" />
+                </div>
+                <div>
+                  <h2 className="font-display font-bold text-base text-white">Excluir partida?</h2>
+                  <p className="text-[11px] text-white/35 mt-0.5">Esta ação não pode ser desfeita.</p>
+                </div>
+              </div>
+
+              <div className="bg-surface-3 border border-white/[0.06] rounded-xl px-4 py-3 mb-5 flex items-center gap-3">
+                <Avatar name={deleteMatch.player1?.name ?? ""} size="xs" />
+                <span className="text-xs font-semibold text-white/60">{deleteMatch.player1?.name?.split(" ")[0]}</span>
+                <span className="text-white/20 font-bold text-xs flex-1 text-center">VS</span>
+                <span className="text-xs font-semibold text-white/60">{deleteMatch.player2?.name?.split(" ")[0]}</span>
+                <Avatar name={deleteMatch.player2?.name ?? ""} size="xs" />
+              </div>
+
+              {deleteError && (
+                <p className="text-xs text-red-400 bg-red-500/10 border border-red-500/20 rounded-xl px-4 py-3 mb-4 text-center">
+                  {deleteError}
+                </p>
+              )}
+
+              <div className="flex gap-3">
+                <Button
+                  variant="secondary"
+                  fullWidth
+                  onClick={() => setDeleteMatch(null)}
+                  disabled={deleting}
+                >
+                  Cancelar
+                </Button>
+                <Button
+                  fullWidth
+                  onClick={handleDelete}
+                  disabled={deleting}
+                  className="!bg-red-500 hover:!bg-red-400 font-display font-bold"
+                >
+                  {deleting ? (
+                    <><Loader2 size={15} className="animate-spin" /> Excluindo...</>
+                  ) : (
+                    <>
+                      <Trash2 size={15} /> Excluir
+                    </>
+                  )}
+                </Button>
+              </div>
             </div>
           </div>
         </div>
