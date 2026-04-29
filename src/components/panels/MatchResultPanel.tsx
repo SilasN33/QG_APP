@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { X, Plus, Minus, Check, Loader2, Trophy } from "lucide-react";
+import { Plus, Minus, Check, Loader2, Trophy } from "lucide-react";
 import { Avatar } from "@/components/ui/Avatar";
 import { Button } from "@/components/ui/Button";
 import { cn } from "@/utils/cn";
@@ -46,11 +46,10 @@ function ScoreInput({
 interface Props {
   match: Match;
   currentPlayerId: string;
-  onClose: () => void;
   onSuccess: () => void;
 }
 
-export function MatchResultPanel({ match, currentPlayerId, onClose, onSuccess }: Props) {
+export function MatchResultPanel({ match, currentPlayerId, onSuccess }: Props) {
   const [sets, setSets] = useState<SetScore[]>([{ p1: 0, p2: 0 }]);
   const [isWo, setIsWo] = useState(false);
   const [woWinner, setWoWinner] = useState<"p1" | "p2" | null>(null);
