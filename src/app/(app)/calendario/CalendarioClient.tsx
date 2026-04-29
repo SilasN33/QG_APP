@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { Avatar } from "@/components/ui/Avatar";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
+import { MatchResultPanel } from "@/components/panels/MatchResultPanel";
 import { cn } from "@/utils/cn";
 import {
   format, startOfMonth, endOfMonth, eachDayOfInterval,
@@ -14,7 +15,7 @@ import {
 import { ptBR } from "date-fns/locale";
 import {
   ChevronLeft, ChevronRight, Plus, X, Search,
-  Clock, MapPin, Check, Loader2,
+  Clock, MapPin, Check, Loader2, ClipboardList,
 } from "lucide-react";
 import { scheduleMatchAction } from "@/lib/actions/scheduleMatch";
 import type { Match, Player } from "@/types";
@@ -65,14 +66,18 @@ export function CalendarioClient({ allMatches, allPlayers, currentPlayer }: Prop
   const [selectedDay, setSelectedDay] = useState<Date | null>(null);
   const [filter, setFilter]           = useState<FilterType>("todos");
 
-  const [showModal, setShowModal]           = useState(false);
-  const [opponent, setOpponent]             = useState<Player | null>(null);
-  const [opponentSearch, setOpponentSearch] = useState("");
-  const [scheduleTime, setScheduleTime]     = useState("10:00");
-  const [court, setCourt]                   = useState("");
-  const [saving, setSaving]                 = useState(false);
-  const [saveError, setSaveError]           = useState<string | null>(null);
-  const [saveSuccess, setSaveSuccess]       = useState(false);
+  // Schedule modal state
+  const [showScheduleModal, setShowScheduleModal] = useState(false);
+  const [opponent, setOpponent]                   = useState<Player | null>(null);
+  const [opponentSearch, setOpponentSearch]       = useState("");
+  const [scheduleTime, setScheduleTime]           = useState("10:00");
+  const [court, setCourt]                         = useState("");
+  const [saving, setSaving]                       = useState(false);
+  const [saveError, setSaveError]                 = useState<string | null>(null);
+  const [saveSuccess, setSaveSuccess]             = useState(false);
+
+  // Result modal state
+  const [resultMatch, setResultMatch] = useState<Match | null>(null);
 
   const calendarDays = useMemo(() => {
     const start = startOfWeek(startOfMonth(currentMonth), { weekStartsOn: 1 });
@@ -116,19 +121,19 @@ export function CalendarioClient({ allMatches, allPlayers, currentPlayer }: Prop
     [opponents, opponentSearch]
   );
 
-  function openModal() {
+  function openScheduleModal() {
     setOpponent(null);
     setOpponentSearch("");
     setScheduleTime("10:00");
     setCourt("");
     setSaveError(null);
     setSaveSuccess(false);
-    setShowModal(true);
+    setShowScheduleModal(true);
   }
 
-  function closeModal() {
+  function closeScheduleModal() {
     if (saving) return;
-    setShowModal(false);
+    setShowScheduleModal(false);
   }
 
   async function handleSchedule() {
@@ -153,10 +158,19 @@ export function CalendarioClient({ allMatches, allPlayers, currentPlayer }: Prop
 
     setSaveSuccess(true);
     setTimeout(() => {
-      setShowModal(false);
+      setShowScheduleModal(false);
       setSaveSuccess(false);
       router.refresh();
     }, 1200);
+  }
+
+  function isMyMatch(match: Match): boolean {
+    if (!currentPlayer) return false;
+    return match.player1_id === currentPlayer.id || match.player2_id === currentPlayer.id;
+  }
+
+  function canRegisterResult(match: Match): boolean {
+    return isMyMatch(match) && (match.status === "scheduled" || match.status === "pending_result");
   }
 
   const weekDays = ["Seg", "Ter", "Qua", "Qui", "Sex", "Sáb", "Dom"];
@@ -266,7 +280,7 @@ export function CalendarioClient({ allMatches, allPlayers, currentPlayer }: Prop
               </p>
               {currentPlayer && (
                 <button
-                  onClick={openModal}
+                  onClick={openScheduleModal}
                   className="flex items-center gap-1 text-xs font-bold text-lime-500/80 bg-lime-500/10 hover:bg-lime-500/15 border border-lime-500/20 transition-colors px-3 py-1.5 rounded-full"
                 >
                   <Plus size={12} />
@@ -286,8 +300,9 @@ export function CalendarioClient({ allMatches, allPlayers, currentPlayer }: Prop
               </div>
             ) : (
               filteredMatches.map((m) => {
-                const hasResult = m.status === "completed" || m.status === "wo";
-                const setsScore =
+                const hasResult    = m.status === "completed" || m.status === "wo";
+                const canRegister  = canRegisterResult(m);
+                const setsScore    =
                   hasResult && m.sets.length
                     ? `${m.sets.filter((s) => s.player1_games > s.player2_games).length}–${m.sets.filter((s) => s.player2_games > s.player1_games).length}`
                     : null;
@@ -295,7 +310,11 @@ export function CalendarioClient({ allMatches, allPlayers, currentPlayer }: Prop
                 return (
                   <div
                     key={m.id}
-                    className="flex items-center px-4 py-3.5 gap-3 border-b border-white/[0.03] last:border-0"
+                    className={cn(
+                      "flex items-center px-4 py-3.5 gap-3 border-b border-white/[0.03] last:border-0",
+                      canRegister && "cursor-pointer hover:bg-white/[0.03] active:bg-white/[0.05] transition-colors"
+                    )}
+                    onClick={() => canRegister && setResultMatch(m)}
                   >
                     <div className="text-right min-w-[36px]">
                       <span className="text-xs font-semibold text-white/35">
@@ -349,9 +368,15 @@ export function CalendarioClient({ allMatches, allPlayers, currentPlayer }: Prop
                         </div>
                       </div>
                     </div>
-                    <div className="shrink-0">
+                    <div className="shrink-0 flex items-center gap-2">
+                      {canRegister && (
+                        <span className="flex items-center gap-1 text-[10px] font-bold text-lime-500/70 bg-lime-500/10 border border-lime-500/20 px-2 py-1 rounded-lg">
+                          <ClipboardList size={10} />
+                          Registrar
+                        </span>
+                      )}
                       {m.status === "completed" && <Badge variant="victory" className="text-[9px]">Concluído</Badge>}
-                      {m.status === "scheduled" && <Badge variant="pending" className="text-[9px]">Pendente</Badge>}
+                      {m.status === "scheduled" && !canRegister && <Badge variant="pending" className="text-[9px]">Pendente</Badge>}
                       {m.status === "wo" && <Badge variant="wo" className="text-[9px]">WO</Badge>}
                     </div>
                   </div>
@@ -363,9 +388,9 @@ export function CalendarioClient({ allMatches, allPlayers, currentPlayer }: Prop
       </div>
 
       {/* Schedule modal */}
-      {showModal && (
+      {showScheduleModal && (
         <div className="fixed inset-0 z-50 flex flex-col justify-end">
-          <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={closeModal} />
+          <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={closeScheduleModal} />
 
           <div className="relative bg-surface-2 border-t border-white/[0.08] rounded-t-3xl max-h-[90vh] flex flex-col animate-slide-up">
             <div className="flex justify-center pt-3 pb-1">
@@ -382,7 +407,7 @@ export function CalendarioClient({ allMatches, allPlayers, currentPlayer }: Prop
                 )}
               </div>
               <button
-                onClick={closeModal}
+                onClick={closeScheduleModal}
                 className="w-8 h-8 flex items-center justify-center rounded-full bg-surface-3 text-white/40 hover:text-white hover:bg-surface-4 transition-colors"
               >
                 <X size={15} />
@@ -455,7 +480,7 @@ export function CalendarioClient({ allMatches, allPlayers, currentPlayer }: Prop
                         type="time"
                         value={scheduleTime}
                         onChange={(e) => setScheduleTime(e.target.value)}
-                        className="w-full pl-8 pr-3 py-2.5 text-sm bg-surface-3 border border-white/[0.07] text-white rounded-xl focus:outline-none focus:border-lime-500/40 transition-colors"
+                        className="w-full pl-8 pr-3 py-2.5 text-sm bg-surface-3 border border-white/[0.07] text-white rounded-xl focus:outline-none focus:border-lime-500/40 transition-colors [color-scheme:dark]"
                       />
                     </div>
                   </div>
@@ -503,6 +528,51 @@ export function CalendarioClient({ allMatches, allPlayers, currentPlayer }: Prop
                 </Button>
               </div>
             )}
+          </div>
+        </div>
+      )}
+
+      {/* Result registration modal */}
+      {resultMatch && (
+        <div className="fixed inset-0 z-50 flex flex-col justify-end">
+          <div
+            className="absolute inset-0 bg-black/70 backdrop-blur-sm"
+            onClick={() => setResultMatch(null)}
+          />
+
+          <div className="relative bg-surface-2 border-t border-white/[0.08] rounded-t-3xl max-h-[90vh] flex flex-col animate-slide-up">
+            <div className="flex justify-center pt-3 pb-1">
+              <div className="w-10 h-1 rounded-full bg-white/[0.12]" />
+            </div>
+
+            <div className="flex items-center justify-between px-5 py-3 border-b border-white/[0.06]">
+              <div>
+                <h2 className="font-display font-bold text-base text-white">Registrar Resultado</h2>
+                {resultMatch.scheduled_at && (
+                  <p className="text-[11px] text-white/30 capitalize mt-0.5">
+                    {format(new Date(resultMatch.scheduled_at), "EEEE, d 'de' MMMM · HH:mm", { locale: ptBR })}
+                  </p>
+                )}
+              </div>
+              <button
+                onClick={() => setResultMatch(null)}
+                className="w-8 h-8 flex items-center justify-center rounded-full bg-surface-3 text-white/40 hover:text-white hover:bg-surface-4 transition-colors"
+              >
+                <X size={15} />
+              </button>
+            </div>
+
+            <div className="overflow-y-auto flex-1">
+              <MatchResultPanel
+                match={resultMatch}
+                currentPlayerId={currentPlayer?.id ?? ""}
+                onClose={() => setResultMatch(null)}
+                onSuccess={() => {
+                  setResultMatch(null);
+                  router.refresh();
+                }}
+              />
+            </div>
           </div>
         </div>
       )}
