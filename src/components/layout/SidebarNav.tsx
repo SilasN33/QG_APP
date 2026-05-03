@@ -4,19 +4,18 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
   Home, Layers, Trophy, Users, User,
-  Settings, CalendarPlus, GitBranch,
+  Settings, CalendarPlus,
 } from "lucide-react";
 import { cn } from "@/utils/cn";
 import { useCurrentPlayer } from "@/lib/hooks/useCurrentPlayer";
 import { useContextPanel } from "./ContextPanelProvider";
 
 const navItems = [
-  { href: "/dashboard",   label: "Início",      Icon: Home },
-  { href: "/calendario",  label: "Jogos",        Icon: Layers },
-  { href: "/ranking",     label: "Ranking",      Icon: Trophy },
-  { href: "/grupos",      label: "Grupos",       Icon: Users },
-  { href: "/chaveamento", label: "Chaveamento",  Icon: GitBranch },
-  { href: "/perfil",      label: "Perfil",       Icon: User },
+  { href: "/dashboard",  label: "Início",  Icon: Home },
+  { href: "/calendario", label: "Jogos",   Icon: Layers },
+  { href: "/ranking",    label: "Ranking", Icon: Trophy },
+  { href: "/grupos",     label: "Grupos",  Icon: Users },
+  { href: "/perfil",     label: "Perfil",  Icon: User },
 ];
 
 const adminItem = { href: "/admin", label: "Admin", Icon: Settings };
