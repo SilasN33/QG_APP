@@ -14,13 +14,12 @@ export function ContextPanel() {
   const { panel, closePanel } = useContextPanel();
   const isOpen = panel.type !== null;
 
-  // Keep content mounted during the close animation (300ms)
   const [displayType, setDisplayType] = useState<PanelType | null>(panel.type);
   useEffect(() => {
     if (panel.type) {
       setDisplayType(panel.type);
     } else {
-      const t = setTimeout(() => setDisplayType(null), 300);
+      const t = setTimeout(() => setDisplayType(null), 350);
       return () => clearTimeout(t);
     }
   }, [panel.type]);
@@ -32,19 +31,20 @@ export function ContextPanel() {
         aria-hidden
         onClick={closePanel}
         className={cn(
-          "fixed inset-0 z-[60] bg-black/60 backdrop-blur-sm transition-opacity duration-300",
+          "fixed inset-0 z-[60] bg-black/65 backdrop-blur-sm transition-opacity duration-300",
           isOpen ? "opacity-100" : "opacity-0 pointer-events-none"
         )}
       />
 
-      {/* Panel */}
+      {/* Panel — slides up from the very bottom */}
       <div
         role="dialog"
         aria-modal={isOpen}
         className={cn(
-          "fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-md z-[70]",
+          "fixed bottom-0 left-0 right-0 z-[70]",
+          "md:left-1/2 md:-translate-x-1/2 md:w-full md:max-w-md",
           "bg-surface-1 border border-white/[0.07] border-b-0 rounded-t-3xl",
-          "transition-transform duration-300 ease-out",
+          "transition-transform duration-350 ease-[cubic-bezier(0.32,0.72,0,1)] will-change-transform",
           isOpen ? "translate-y-0" : "translate-y-full pointer-events-none"
         )}
       >
@@ -67,7 +67,7 @@ export function ContextPanel() {
         </div>
 
         {/* Content */}
-        <div className="max-h-[78vh] overflow-y-auto overscroll-contain">
+        <div className="max-h-[78vh] overflow-y-auto overscroll-contain pb-safe">
           {displayType === "schedule-match" && (
             <ScheduleMatchPanel onClose={closePanel} />
           )}
