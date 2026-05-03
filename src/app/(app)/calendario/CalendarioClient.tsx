@@ -15,7 +15,7 @@ import {
 import { ptBR } from "date-fns/locale";
 import {
   ChevronLeft, ChevronRight, Plus, X, Search,
-  Clock, MapPin, Check, Loader2, ClipboardList, Trash2, AlertTriangle,
+  Clock, MapPin, Check, Loader2, ClipboardList, Trash2, AlertTriangle, Pencil,
 } from "lucide-react";
 import { scheduleMatchAction } from "@/lib/actions/scheduleMatch";
 import { deleteMatchAction } from "@/lib/actions/deleteMatch";
@@ -79,6 +79,9 @@ export function CalendarioClient({ allMatches, allPlayers, currentPlayer }: Prop
 
   // Result modal state
   const [resultMatch, setResultMatch] = useState<Match | null>(null);
+
+  // Edit result modal state
+  const [editMatch, setEditMatch] = useState<Match | null>(null);
 
   // Delete confirm state
   const [deleteMatch, setDeleteMatch] = useState<Match | null>(null);
@@ -181,6 +184,10 @@ export function CalendarioClient({ allMatches, allPlayers, currentPlayer }: Prop
 
   function canDelete(match: Match): boolean {
     return isMyMatch(match) && (match.status === "scheduled" || match.status === "pending_result");
+  }
+
+  function canEdit(match: Match): boolean {
+    return isMyMatch(match) && (match.status === "completed" || match.status === "wo");
   }
 
   async function handleDelete() {
@@ -400,6 +407,14 @@ export function CalendarioClient({ allMatches, allPlayers, currentPlayer }: Prop
                           Registrar
                         </span>
                       )}
+                      {canEdit(m) && (
+                        <button
+                          onClick={(e) => { e.stopPropagation(); setEditMatch(m); }}
+                          className="w-7 h-7 flex items-center justify-center rounded-lg text-white/25 hover:text-blue-400 hover:bg-blue-500/10 transition-colors"
+                        >
+                          <Pencil size={13} />
+                        </button>
+                      )}
                       {canDelete(m) && (
                         <button
                           onClick={(e) => { e.stopPropagation(); setDeleteError(null); setDeleteMatch(m); }}
@@ -608,6 +623,48 @@ export function CalendarioClient({ allMatches, allPlayers, currentPlayer }: Prop
           </div>
         </div>
       )}
+      {/* Edit result modal */}
+      {editMatch && (
+        <div className="fixed inset-0 z-50 flex flex-col justify-end">
+          <div
+            className="absolute inset-0 bg-black/70 backdrop-blur-sm"
+            onClick={() => setEditMatch(null)}
+          />
+          <div className="relative bg-surface-2 border-t border-white/[0.08] rounded-t-3xl max-h-[90vh] flex flex-col animate-slide-up">
+            <div className="flex justify-center pt-3 pb-1">
+              <div className="w-10 h-1 rounded-full bg-white/[0.12]" />
+            </div>
+            <div className="flex items-center justify-between px-5 py-3 border-b border-white/[0.06]">
+              <div>
+                <h2 className="font-display font-bold text-base text-white">Editar Resultado</h2>
+                {editMatch.scheduled_at && (
+                  <p className="text-[11px] text-white/30 capitalize mt-0.5">
+                    {format(new Date(editMatch.scheduled_at), "EEEE, d 'de' MMMM · HH:mm", { locale: ptBR })}
+                  </p>
+                )}
+              </div>
+              <button
+                onClick={() => setEditMatch(null)}
+                className="w-8 h-8 flex items-center justify-center rounded-full bg-surface-3 text-white/40 hover:text-white hover:bg-surface-4 transition-colors"
+              >
+                <X size={15} />
+              </button>
+            </div>
+            <div className="overflow-y-auto flex-1">
+              <MatchResultPanel
+                match={editMatch}
+                currentPlayerId={currentPlayer?.id ?? ""}
+                mode="edit"
+                onSuccess={() => {
+                  setEditMatch(null);
+                  router.refresh();
+                }}
+              />
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Delete confirmation modal */}
       {deleteMatch && (
         <div className="fixed inset-0 z-50 flex flex-col justify-end">

@@ -1,11 +1,12 @@
 "use client";
 
 import { useState } from "react";
-import { Plus, Minus, Check, Loader2, Trophy } from "lucide-react";
+import { Plus, Minus, Check, Loader2, Trophy, Pencil } from "lucide-react";
 import { Avatar } from "@/components/ui/Avatar";
 import { Button } from "@/components/ui/Button";
 import { cn } from "@/utils/cn";
 import { submitMatchResultAction } from "@/lib/actions/submitMatchResult";
+import { editMatchResultAction } from "@/lib/actions/editMatchResult";
 import type { Match } from "@/types";
 
 interface SetScore {
@@ -46,13 +47,45 @@ function ScoreInput({
 interface Props {
   match: Match;
   currentPlayerId: string;
+  mode?: "register" | "edit";
   onSuccess: () => void;
 }
 
-export function MatchResultPanel({ match, currentPlayerId, onSuccess }: Props) {
-  const [sets, setSets] = useState<SetScore[]>([{ p1: 0, p2: 0 }]);
-  const [isWo, setIsWo] = useState(false);
-  const [woWinner, setWoWinner] = useState<"p1" | "p2" | null>(null);
+function getInitialSets(match: Match, mode: "register" | "edit"): SetScore[] {
+  if (mode === "edit" && match.sets.length > 0) {
+    return match.sets
+      .slice()
+      .sort((a, b) => a.set_number - b.set_number)
+      .map((s) => ({ p1: s.player1_games, p2: s.player2_games }));
+  }
+  return [{ p1: 0, p2: 0 }];
+}
+
+function getInitialWo(match: Match, mode: "register" | "edit"): boolean {
+  return mode === "edit" && match.status === "wo";
+}
+
+function getInitialWoWinner(
+  match: Match,
+  mode: "register" | "edit"
+): "p1" | "p2" | null {
+  if (mode !== "edit" || match.status !== "wo" || !match.winner_id) return null;
+  return match.winner_id === match.player1_id ? "p1" : "p2";
+}
+
+export function MatchResultPanel({
+  match,
+  currentPlayerId,
+  mode = "register",
+  onSuccess,
+}: Props) {
+  const isEdit = mode === "edit";
+
+  const [sets, setSets] = useState<SetScore[]>(() => getInitialSets(match, mode));
+  const [isWo, setIsWo] = useState(() => getInitialWo(match, mode));
+  const [woWinner, setWoWinner] = useState<"p1" | "p2" | null>(() =>
+    getInitialWoWinner(match, mode)
+  );
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
@@ -83,7 +116,7 @@ export function MatchResultPanel({ match, currentPlayerId, onSuccess }: Props) {
     setSubmitting(true);
     setError(null);
 
-    const { error: err } = await submitMatchResultAction({
+    const payload = {
       match_id: match.id,
       winner_id: winnerId,
       sets: isWo
@@ -96,7 +129,11 @@ export function MatchResultPanel({ match, currentPlayerId, onSuccess }: Props) {
               player2_games: s.p2,
             })),
       is_wo: isWo,
-    });
+    };
+
+    const { error: err } = isEdit
+      ? await editMatchResultAction(payload)
+      : await submitMatchResultAction(payload);
 
     setSubmitting(false);
     if (err) {
@@ -109,18 +146,22 @@ export function MatchResultPanel({ match, currentPlayerId, onSuccess }: Props) {
 
   const winnerId = computeWinner();
   const winnerName =
-    winnerId === match.player1_id
-      ? match.player1?.name
-      : match.player2?.name;
+    winnerId === match.player1_id ? match.player1?.name : match.player2?.name;
 
   if (success) {
     return (
       <div className="flex flex-col items-center gap-4 py-12 px-6">
         <div className="w-16 h-16 rounded-full bg-lime-500/15 border border-lime-500/30 flex items-center justify-center">
-          <Trophy size={28} className="text-lime-500" />
+          {isEdit ? (
+            <Pencil size={28} className="text-lime-500" />
+          ) : (
+            <Trophy size={28} className="text-lime-500" />
+          )}
         </div>
         <div className="text-center">
-          <p className="font-display font-bold text-white text-lg">Resultado registrado!</p>
+          <p className="font-display font-bold text-white text-lg">
+            {isEdit ? "Resultado atualizado!" : "Resultado registrado!"}
+          </p>
           {winnerName && (
             <p className="text-white/40 text-sm mt-1">Vencedor: {winnerName}</p>
           )}
@@ -151,7 +192,7 @@ export function MatchResultPanel({ match, currentPlayerId, onSuccess }: Props) {
       {!isParticipant ? (
         <div className="bg-surface-3 border border-white/[0.06] rounded-xl px-4 py-6 text-center">
           <p className="text-white/40 text-sm">
-            Apenas os participantes podem registrar o resultado desta partida.
+            Apenas os participantes podem {isEdit ? "editar" : "registrar"} o resultado desta partida.
           </p>
         </div>
       ) : (
@@ -164,10 +205,7 @@ export function MatchResultPanel({ match, currentPlayerId, onSuccess }: Props) {
                 <p className="text-xs text-white/30 mt-0.5">Marque se houve ausência</p>
               </div>
               <button
-                onClick={() => {
-                  setIsWo(!isWo);
-                  setWoWinner(null);
-                }}
+                onClick={() => { setIsWo(!isWo); setWoWinner(null); }}
                 className={cn(
                   "w-12 h-6 rounded-full transition-all relative shrink-0",
                   isWo ? "bg-lime-500" : "bg-surface-4"
@@ -285,17 +323,13 @@ export function MatchResultPanel({ match, currentPlayerId, onSuccess }: Props) {
             fullWidth
             size="lg"
             onClick={handleSubmit}
-            disabled={
-              submitting ||
-              (!isWo && !winnerId) ||
-              (isWo && !woWinner)
-            }
+            disabled={submitting || (!isWo && !winnerId) || (isWo && !woWinner)}
             className="font-display font-bold tracking-wide"
           >
             {submitting ? (
-              <>
-                <Loader2 size={16} className="animate-spin" /> Salvando...
-              </>
+              <><Loader2 size={16} className="animate-spin" /> Salvando...</>
+            ) : isEdit ? (
+              "Salvar Alterações"
             ) : (
               "Confirmar e Encerrar Partida"
             )}
