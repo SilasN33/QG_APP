@@ -5,7 +5,7 @@ import { createClient } from "@/lib/supabase/server";
 export const metadata: Metadata = { title: "Ranking" };
 import { getPlayerByUserId, getAllPlayers } from "@/lib/queries/players";
 import { getAllMatches } from "@/lib/queries/matches";
-import { computeAllStandings, computeGlobalRanking } from "@/lib/queries/standings";
+import { computeAllStandings } from "@/lib/queries/standings";
 import { RankingClient } from "./RankingClient";
 
 export default async function RankingPage() {
@@ -20,12 +20,12 @@ export default async function RankingPage() {
   ]);
 
   const allStandings = computeAllStandings(allPlayers, allMatches);
-  const globalRanking = computeGlobalRanking(allStandings);
 
   return (
     <RankingClient
-      globalRanking={globalRanking}
+      allStandings={allStandings}
       currentPlayerId={currentPlayer?.id ?? null}
+      currentPlayerGroup={currentPlayer?.group_letter ?? null}
     />
   );
 }
