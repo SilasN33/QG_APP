@@ -131,6 +131,26 @@ CREATE POLICY "Players insert match sets" ON match_sets
     )
   );
 
+-- Jogador exclui partidas agendadas das quais é participante (não encerradas)
+CREATE POLICY "Players delete own scheduled matches" ON matches
+  FOR DELETE USING (
+    auth.uid() IN (
+      SELECT p.user_id FROM players p
+      WHERE p.id = player1_id OR p.id = player2_id
+    )
+    AND status IN ('scheduled', 'pending_result')
+  );
+
+-- Jogador exclui sets das suas próprias partidas (para edição de resultado)
+CREATE POLICY "Players delete own match sets" ON match_sets
+  FOR DELETE USING (
+    auth.uid() IN (
+      SELECT p.user_id FROM players p
+      JOIN matches m ON (m.player1_id = p.id OR m.player2_id = p.id)
+      WHERE m.id = match_id
+    )
+  );
+
 COMMIT;
 
 -- ============================================================
