@@ -45,7 +45,6 @@ export async function middleware(request: NextRequest) {
     const isPublicRoute =
       pathname === "/" ||
       pathname.startsWith("/login") ||
-      pathname.startsWith("/signup") ||
       pathname.startsWith("/onboarding") ||
       pathname.startsWith("/setup");
 
@@ -53,7 +52,7 @@ export async function middleware(request: NextRequest) {
       return NextResponse.redirect(new URL("/login", request.url));
     }
 
-    if (user && (pathname === "/" || pathname.startsWith("/login") || pathname.startsWith("/signup"))) {
+    if (user && (pathname === "/" || pathname.startsWith("/login"))) {
       return NextResponse.redirect(new URL("/dashboard", request.url));
     }
   } catch {
@@ -62,8 +61,7 @@ export async function middleware(request: NextRequest) {
     const { pathname } = request.nextUrl;
     const isPublicOnError =
       pathname === "/" ||
-      pathname.startsWith("/login") ||
-      pathname.startsWith("/signup");
+      pathname.startsWith("/login");
     if (!isPublicOnError) {
       return NextResponse.redirect(new URL("/login", request.url));
     }

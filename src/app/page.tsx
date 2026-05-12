@@ -194,7 +194,7 @@ export default function LandingPage() {
             </div>
           )}
 
-          {/* CTA buttons */}
+          {/* CTA button */}
           <div
             className="flex flex-col gap-3 mt-10 max-w-xs mx-auto animate-slide-up"
             style={{ animationDelay: "0.22s" }}
@@ -204,12 +204,6 @@ export default function LandingPage() {
               className="block w-full bg-lime-500 text-surface-0 font-display font-bold text-base py-4 rounded-2xl shadow-glow hover:bg-lime-400 transition-colors active:scale-[0.98] text-center"
             >
               Entrar
-            </Link>
-            <Link
-              href="/signup"
-              className="block w-full bg-surface-0/40 border border-white/[0.08] text-white/55 font-semibold text-sm py-3.5 rounded-2xl hover:text-white/80 hover:bg-surface-0/60 transition-all text-center"
-            >
-              Criar conta
             </Link>
           </div>
         </div>

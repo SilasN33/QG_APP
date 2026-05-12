@@ -116,11 +116,8 @@ export default function LoginPage() {
             </div>
           </form>
 
-          <p className="text-white/25 text-sm text-center mt-6">
-            Não tem conta?{" "}
-            <Link href="/signup" className="text-lime-500/80 font-semibold hover:text-lime-500 transition-colors">
-              Criar conta
-            </Link>
+          <p className="text-white/25 text-xs text-center mt-6">
+            Acesso exclusivo para participantes do torneio.
           </p>
         </div>
       </div>
