@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
-import { computeAllStandings } from "@/lib/queries/standings";
+import { computeAllStandings, computeGlobalRanking } from "@/lib/queries/standings";
 import { Avatar } from "@/components/ui/Avatar";
 import { cn } from "@/utils/cn";
 import Link from "next/link";
@@ -44,6 +44,7 @@ function useCountdown(): { countdown: Countdown | null; started: boolean } {
 
 export default function LandingPage() {
   const [grouped, setGrouped]               = useState<GroupedStanding[]>(EMPTY_GROUPS);
+  const [globalRanking, setGlobalRanking]   = useState<Standing[]>([]);
   const [totalPlayers, setTotalPlayers]     = useState(0);
   const [completedMatches, setCompleted]    = useState<number | null>(null);
   const { countdown, started }              = useCountdown();
@@ -76,11 +77,13 @@ export default function LandingPage() {
         })) as Match[];
 
         const allStandings = computeAllStandings(players, matches);
+        const ranking      = computeGlobalRanking(allStandings);
 
         setTotalPlayers(players.filter((p) => p.group_letter !== null).length);
         setCompleted(
           Math.round(allStandings.reduce((a, s) => a + s.matches_played, 0) / 2)
         );
+        setGlobalRanking(ranking);
         setGrouped(
           GROUPS.map((g) => ({
             letter: g,
@@ -224,6 +227,180 @@ export default function LandingPage() {
               delay={0.27 + idx * 0.07}
             />
           ))}
+        </div>
+      </div>
+
+      {/* ─── Players Stats ─── */}
+      <div className="px-4 pb-10">
+        <p className="text-white/25 text-[9px] font-bold uppercase tracking-[0.28em] mb-4 px-1">
+          Estatísticas dos Jogadores
+        </p>
+
+        {/* Top 3 podium */}
+        {globalRanking.filter((s) => s.matches_played > 0).length >= 3 && (
+          <div className="flex items-end justify-center gap-3 mb-6">
+            {[1, 0, 2].map((idx) => {
+              const s = globalRanking.filter((s) => s.matches_played > 0)[idx];
+              if (!s) return null;
+              const rank = idx + 1;
+              const isFirst = rank === 1;
+              return (
+                <div
+                  key={s.player.id}
+                  className={cn(
+                    "flex flex-col items-center gap-2 animate-slide-up",
+                    isFirst ? "order-2" : rank === 2 ? "order-1" : "order-3"
+                  )}
+                  style={{ animationDelay: `${0.1 + idx * 0.07}s` }}
+                >
+                  <div className={cn("relative", isFirst && "mb-2")}>
+                    {isFirst && (
+                      <span className="absolute -top-5 left-1/2 -translate-x-1/2 text-lg">👑</span>
+                    )}
+                    <Avatar
+                      name={s.player.name}
+                      src={s.player.avatar_url}
+                      size={isFirst ? "xl" : "lg"}
+                      className={cn(
+                        "ring-2 ring-offset-2 ring-offset-surface-1",
+                        isFirst
+                          ? "ring-lime-500/60"
+                          : rank === 2
+                          ? "ring-white/20"
+                          : "ring-amber-600/40"
+                      )}
+                    />
+                    <span
+                      className={cn(
+                        "absolute -bottom-1 -right-1 w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-display font-bold border",
+                        isFirst
+                          ? "bg-lime-500 text-surface-0 border-surface-1"
+                          : rank === 2
+                          ? "bg-white/20 text-white border-surface-1"
+                          : "bg-amber-700/60 text-amber-200 border-surface-1"
+                      )}
+                    >
+                      {rank}
+                    </span>
+                  </div>
+                  <div className="text-center">
+                    <p className={cn("text-xs font-bold truncate max-w-[72px]", isFirst ? "text-white" : "text-white/50")}>
+                      {s.player.name.split(" ")[0]}
+                    </p>
+                    <p className={cn("font-display font-bold text-sm", isFirst ? "text-lime-500" : "text-white/30")}>
+                      {s.points} pts
+                    </p>
+                  </div>
+                  <div
+                    className={cn(
+                      "w-20 rounded-t-xl border-t border-x flex items-center justify-center py-1",
+                      isFirst
+                        ? "bg-lime-500/10 border-lime-500/25 h-14"
+                        : rank === 2
+                        ? "bg-surface-3 border-white/[0.06] h-10"
+                        : "bg-surface-3 border-white/[0.06] h-7"
+                    )}
+                  >
+                    <span className={cn("font-display font-bold text-lg", isFirst ? "text-lime-500/40" : "text-white/10")}>
+                      {rank}
+                    </span>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+
+        {/* Full leaderboard */}
+        <div className="bg-surface-2 rounded-2xl border border-white/[0.06] shadow-card overflow-hidden animate-slide-up" style={{ animationDelay: "0.35s" }}>
+          {/* Header */}
+          <div className="grid grid-cols-[28px_1fr_36px_28px_28px_44px] gap-2 items-center px-4 py-2.5 border-b border-white/[0.05]">
+            <span className="text-[9px] font-bold uppercase tracking-widest text-white/20">#</span>
+            <span className="text-[9px] font-bold uppercase tracking-widest text-white/20">Jogador</span>
+            <span className="text-[9px] font-bold uppercase tracking-widest text-white/20 text-center">J</span>
+            <span className="text-[9px] font-bold uppercase tracking-widest text-lime-500/50 text-center">V</span>
+            <span className="text-[9px] font-bold uppercase tracking-widest text-red-400/40 text-center">D</span>
+            <span className="text-[9px] font-bold uppercase tracking-widest text-white/20 text-right">Pts</span>
+          </div>
+
+          {/* Skeleton while loading */}
+          {globalRanking.length === 0 && (
+            <>
+              {[1,2,3,4,5,6].map((n) => (
+                <div key={n} className="flex items-center gap-3 px-4 py-3 border-b border-white/[0.03] last:border-0">
+                  <div className="w-5 h-5 rounded-full bg-surface-3 animate-pulse shrink-0" />
+                  <div className="w-8 h-8 rounded-full bg-surface-3 animate-pulse shrink-0" />
+                  <div className="flex-1 h-3 bg-surface-3 rounded-full animate-pulse" />
+                  <div className="w-20 h-3 bg-surface-3 rounded-full animate-pulse" />
+                </div>
+              ))}
+            </>
+          )}
+
+          {/* Rows */}
+          {globalRanking.map((s, i) => {
+            const winRate = s.matches_played > 0 ? Math.round((s.wins / s.matches_played) * 100) : 0;
+            const isTop2  = i < 2 && s.matches_played > 0;
+            return (
+              <div
+                key={s.player.id}
+                className={cn(
+                  "grid grid-cols-[28px_1fr_36px_28px_28px_44px] gap-2 items-center px-4 py-3 border-b border-white/[0.03] last:border-0",
+                  isTop2 && "bg-lime-500/[0.03]"
+                )}
+              >
+                <span
+                  className={cn(
+                    "w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-display font-bold shrink-0",
+                    i === 0
+                      ? "bg-lime-500/20 text-lime-400 border border-lime-500/30"
+                      : i === 1
+                      ? "bg-white/[0.06] text-white/40 border border-white/10"
+                      : i === 2
+                      ? "bg-amber-700/20 text-amber-500/70 border border-amber-600/20"
+                      : "text-white/20"
+                  )}
+                >
+                  {i + 1}
+                </span>
+
+                <div className="flex items-center gap-2 min-w-0">
+                  <Avatar name={s.player.name} src={s.player.avatar_url} size="sm" className={cn(!isTop2 && s.matches_played === 0 && "opacity-30")} />
+                  <div className="min-w-0">
+                    <p className={cn("text-xs font-semibold truncate leading-tight", s.matches_played > 0 ? "text-white/80" : "text-white/25")}>
+                      {s.player.name.split(" ")[0]}
+                    </p>
+                    {s.matches_played > 0 && (
+                      <div className="flex items-center gap-1 mt-0.5">
+                        <div className="w-12 h-1 bg-surface-4 rounded-full overflow-hidden">
+                          <div
+                            className="h-full bg-lime-500/60 rounded-full"
+                            style={{ width: `${winRate}%` }}
+                          />
+                        </div>
+                        <span className="text-[9px] text-white/20 font-semibold">{winRate}%</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                <span className={cn("text-xs font-semibold text-center", s.matches_played > 0 ? "text-white/40" : "text-white/15")}>
+                  {s.matches_played}
+                </span>
+                <span className="text-xs font-bold text-lime-500/70 text-center">{s.wins}</span>
+                <span className="text-xs text-red-400/50 text-center">{s.losses}</span>
+
+                <div className="text-right">
+                  <span className={cn("font-display font-bold text-sm", s.matches_played > 0 ? isTop2 ? "text-lime-400" : "text-white/60" : "text-white/15")}>
+                    {s.points}
+                  </span>
+                  {s.player.group_letter && (
+                    <p className="text-[8px] text-white/15 font-bold">Gr.{s.player.group_letter}</p>
+                  )}
+                </div>
+              </div>
+            );
+          })}
         </div>
       </div>
 
