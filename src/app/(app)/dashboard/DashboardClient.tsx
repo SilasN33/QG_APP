@@ -35,12 +35,13 @@ function getSetScore(match: Match, playerId: string) {
 }
 
 interface Props {
-  player:    Player;
-  myMatches: Match[];
-  standing:  Standing | null;
+  player:         Player;
+  myMatches:      Match[];
+  standing:       Standing | null;
+  groupStandings: Standing[];
 }
 
-export function DashboardClient({ player, myMatches, standing }: Props) {
+export function DashboardClient({ player, myMatches, standing, groupStandings }: Props) {
   const { openPanel } = useContextPanel();
   const nextMatch     = myMatches.find((m) => m.status === "scheduled");
   const recentMatches = myMatches
@@ -55,6 +56,21 @@ export function DashboardClient({ player, myMatches, standing }: Props) {
   const wo      = myMatches.filter(
     (m) => m.status === "wo" && m.winner_id !== player.id
   ).length;
+
+  const leaderPoints = groupStandings[0]?.points ?? 0;
+  const leaderDelta  = standing ? leaderPoints - standing.points : 0;
+
+  const winStreak = (() => {
+    const finished = [...myMatches]
+      .filter((m) => m.status === "completed" || m.status === "wo")
+      .sort((a, b) => new Date(b.scheduled_at ?? 0).getTime() - new Date(a.scheduled_at ?? 0).getTime());
+    let streak = 0;
+    for (const m of finished) {
+      if (m.winner_id === player.id) streak++;
+      else break;
+    }
+    return streak;
+  })();
 
   return (
     <div className="animate-slide-up">
@@ -180,7 +196,7 @@ export function DashboardClient({ player, myMatches, standing }: Props) {
                 </span>
               </div>
             </Link>
-            <Link href="/partidas/novo">
+            <Link href="/calendario">
               <div className="bg-lime-500 rounded-2xl p-4 flex flex-col items-center gap-2.5 active:scale-95 transition-transform shadow-glow">
                 <ClipboardEdit size={20} className="text-surface-0" />
                 <span className="text-surface-0 text-[11px] font-bold text-center leading-tight">
@@ -310,6 +326,25 @@ export function DashboardClient({ player, myMatches, standing }: Props) {
                 ))}
               </div>
             </div>
+            {(leaderDelta > 0 || winStreak > 1) && (
+              <div className="flex items-center gap-2 mt-3 pt-3 border-t border-white/[0.06]">
+                {leaderDelta > 0 && (
+                  <span className="text-[11px] text-white/30 font-semibold">
+                    A <span className="text-amber-400">{leaderDelta} pts</span> do líder
+                  </span>
+                )}
+                {leaderDelta === 0 && standing.position === 1 && (
+                  <span className="text-[11px] text-lime-500 font-semibold flex items-center gap-1">
+                    <Crown size={11} /> Líder do grupo
+                  </span>
+                )}
+                {winStreak > 1 && (
+                  <span className="ml-auto text-[11px] text-lime-500 font-semibold">
+                    🔥 {winStreak} em sequência
+                  </span>
+                )}
+              </div>
+            )}
           </Card>
         )}
       </div>
