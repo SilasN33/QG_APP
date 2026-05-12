@@ -1,10 +1,18 @@
 "use server";
 
+import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
+
+const schema = z.object({
+  match_id: z.string().uuid("ID da partida inválido."),
+});
 
 export async function deleteMatchAction(
   matchId: string
 ): Promise<{ error: string | null }> {
+  const parsed = schema.safeParse({ match_id: matchId });
+  if (!parsed.success) return { error: parsed.error.issues[0].message };
+
   const supabase = await createClient();
 
   const { data: { user } } = await supabase.auth.getUser();
@@ -21,7 +29,7 @@ export async function deleteMatchAction(
   const { data: match } = await supabase
     .from("matches")
     .select("id, player1_id, player2_id, status")
-    .eq("id", matchId)
+    .eq("id", parsed.data.match_id)
     .single();
 
   if (!match) return { error: "Partida não encontrada." };
@@ -30,7 +38,6 @@ export async function deleteMatchAction(
   if (!isParticipant && !me.is_admin) {
     return { error: "Você não tem permissão para excluir esta partida." };
   }
-
   if (match.status === "completed" || match.status === "wo") {
     return { error: "Não é possível excluir uma partida já encerrada." };
   }
@@ -38,7 +45,7 @@ export async function deleteMatchAction(
   const { error } = await supabase
     .from("matches")
     .delete()
-    .eq("id", matchId);
+    .eq("id", parsed.data.match_id);
 
   if (error) return { error: error.message };
   return { error: null };

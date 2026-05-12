@@ -3,9 +3,8 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 
 export const metadata: Metadata = { title: "Dashboard" };
-import { getPlayerByUserId } from "@/lib/queries/players";
+import { getPlayerByUserId, getAllPlayers } from "@/lib/queries/players";
 import { getMatchesByPlayer, getAllMatches } from "@/lib/queries/matches";
-import { getAllPlayers } from "@/lib/queries/players";
 import { computeAllStandings } from "@/lib/queries/standings";
 import { DashboardClient } from "./DashboardClient";
 
@@ -16,13 +15,11 @@ export default async function DashboardPage() {
   if (!user) redirect("/login");
 
   const player = await getPlayerByUserId(user.id);
-
-  // Layout já deveria ter redirecionado, mas garantimos aqui também
   if (!player) redirect("/login");
 
-  let myMatches: Awaited<ReturnType<typeof getMatchesByPlayer>> = [];
-  let allPlayers: Awaited<ReturnType<typeof getAllPlayers>> = [];
-  let allMatches: Awaited<ReturnType<typeof getAllMatches>> = [];
+  let myMatches:  Awaited<ReturnType<typeof getMatchesByPlayer>> = [];
+  let allPlayers: Awaited<ReturnType<typeof getAllPlayers>>       = [];
+  let allMatches: Awaited<ReturnType<typeof getAllMatches>>       = [];
 
   try {
     [myMatches, allPlayers, allMatches] = await Promise.all([
@@ -31,17 +28,21 @@ export default async function DashboardPage() {
       getAllMatches(),
     ]);
   } catch {
-    // Se as queries falharem, renderiza o dashboard com dados vazios
+    // renderiza com dados vazios se queries falharem
   }
 
-  const allStandings = computeAllStandings(allPlayers, allMatches);
-  const myStanding = allStandings.find((s) => s.player.id === player.id) ?? null;
+  const allStandings   = computeAllStandings(allPlayers, allMatches);
+  const myStanding     = allStandings.find((s) => s.player.id === player.id) ?? null;
+  const groupStandings = player.group_letter
+    ? allStandings.filter((s) => s.group_letter === player.group_letter)
+    : [];
 
   return (
     <DashboardClient
       player={player}
       myMatches={myMatches}
       standing={myStanding}
+      groupStandings={groupStandings}
     />
   );
 }

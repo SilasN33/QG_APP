@@ -1,23 +1,30 @@
 "use server";
 
+import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
 
-export interface SetScoreInput {
-  set_number: number;
-  player1_games: number;
-  player2_games: number;
-}
+const setSchema = z.object({
+  set_number:    z.number().int().min(1).max(3),
+  player1_games: z.number().int().min(0).max(7),
+  player2_games: z.number().int().min(0).max(7),
+});
 
-export interface SubmitMatchResultInput {
-  match_id: string;
-  winner_id: string;
-  sets: SetScoreInput[];
-  is_wo: boolean;
-}
+const schema = z.object({
+  match_id:  z.string().uuid("ID da partida inválido."),
+  winner_id: z.string().uuid("ID do vencedor inválido."),
+  sets:      z.array(setSchema).max(3),
+  is_wo:     z.boolean(),
+});
+
+export type SubmitMatchResultInput = z.infer<typeof schema>;
 
 export async function submitMatchResultAction(
   input: SubmitMatchResultInput
 ): Promise<{ error: string | null }> {
+  const parsed = schema.safeParse(input);
+  if (!parsed.success) return { error: parsed.error.issues[0].message };
+
+  const { match_id, winner_id, sets, is_wo } = parsed.data;
   const supabase = await createClient();
 
   const { data: { user } } = await supabase.auth.getUser();
@@ -34,7 +41,7 @@ export async function submitMatchResultAction(
   const { data: match } = await supabase
     .from("matches")
     .select("id, player1_id, player2_id, status")
-    .eq("id", input.match_id)
+    .eq("id", match_id)
     .single();
 
   if (!match) return { error: "Partida não encontrada." };
@@ -47,18 +54,15 @@ export async function submitMatchResultAction(
 
   const { error: matchError } = await supabase
     .from("matches")
-    .update({
-      winner_id: input.winner_id,
-      status: input.is_wo ? "wo" : "completed",
-    })
-    .eq("id", input.match_id);
+    .update({ winner_id, status: is_wo ? "wo" : "completed" })
+    .eq("id", match_id);
 
   if (matchError) return { error: matchError.message };
 
-  if (!input.is_wo && input.sets.length > 0) {
+  if (!is_wo && sets.length > 0) {
     const { error: setsError } = await supabase
       .from("match_sets")
-      .insert(input.sets.map((s) => ({ ...s, match_id: input.match_id })));
+      .insert(sets.map((s) => ({ ...s, match_id })));
     if (setsError) return { error: setsError.message };
   }
 
